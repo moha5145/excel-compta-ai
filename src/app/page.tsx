@@ -1,13 +1,17 @@
 "use client";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
-import { FormulaAssistant } from "@/components/FormulaAssistant";
+import { 
+  FormulaInputBar, 
+  FormulaResultArea, 
+  FormulaExamples 
+} from "@/components/FormulaAssistant";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { findDemoResponse } from "@/lib/demoResponses";
 
 interface HistoryItem {
   prompt: string;
@@ -21,22 +25,169 @@ export default function Home() {
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Ref to pass restore callback from sidebar → FormulaAssistant
-  const restoreCallbackRef = useRef<((item: HistoryItem) => void) | null>(null);
+  // Lifted Assistant States
+  const [prompt, setPrompt] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [response, setResponse] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [isDemoResponse, setIsDemoResponse] = useState(false);
+  const [previousPrompt, setPreviousPrompt] = useState("");
+  const [history, setHistory] = useLocalStorage<HistoryItem[]>("excel_compta_history", []);
 
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Restore item from history
   const handleRestoreItem = useCallback((item: HistoryItem) => {
-    restoreCallbackRef.current?.(item);
+    setPrompt(item.prompt);
+    setResponse(item.response);
+    setIsDemoResponse(false);
   }, []);
 
-  const registerRestoreCallback = useCallback(
-    (setter: (item: HistoryItem) => void) => {
-      restoreCallbackRef.current = setter;
-    },
-    []
-  );
+  // Copy result
+  const handleCopy = useCallback(() => {
+    if (!response) return;
+    const formulaMatch = response.match(/```(?:excel)?\n?([\s\S]*?)\n?```/);
+    const textToCopy = formulaMatch ? formulaMatch[1].trim() : response;
+    navigator.clipboard.writeText(textToCopy);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success("Formule copiée dans le presse-papier !");
+  }, [response]);
+
+  // Download result
+  const handleDownload = useCallback(() => {
+    if (!response) return;
+    const blob = new Blob([response], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `formule-excel-compta-ai-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Fichier de formule téléchargé !");
+  }, [response]);
+
+  // Enhance prompt
+  const handleEnhance = useCallback(async () => {
+    if (!prompt.trim() || enhancing || loading) return;
+    setPreviousPrompt(prompt);
+    setIsDemoResponse(false);
+    setEnhancing(true);
+    try {
+      const res = await fetch("/api/enhance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, apiKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setPrompt(data.result);
+      toast.success("Demande améliorée avec succès !");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'amélioration.");
+    } finally {
+      setEnhancing(false);
+    }
+  }, [prompt, apiKey, enhancing, loading]);
+
+  // Generate formula
+  const handleGenerate = useCallback(async () => {
+    if (!prompt.trim() || loading) return;
+    const isLimitReached = !apiKey && demoUsesLeft <= 0;
+    if (isLimitReached) {
+      setIsKeyModalOpen(true);
+      return;
+    }
+    setLoading(true);
+    setResponse("");
+    setIsDemoResponse(false);
+    try {
+      const res = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, apiKey, modelChoice }),
+      });
+      
+      if (!res.ok) {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          throw new Error(data.error);
+        } else {
+          throw new Error("Erreur serveur lors de la génération.");
+        }
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("Le flux de réponse est indisponible.");
+
+      const decoder = new TextDecoder();
+      let streamResponse = "";
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        streamResponse += chunk;
+        setResponse(streamResponse);
+      }
+
+      setHistory((prev) => {
+        const filtered = prev.filter((item) => item.prompt !== prompt);
+        return [{ prompt, response: streamResponse }, ...filtered].slice(0, 10);
+      });
+      
+      if (!apiKey) {
+        setDemoUsesLeft((prev) => Math.max(0, prev - 1));
+      }
+    } catch (err: any) {
+      if (!apiKey) {
+        const demoResult = findDemoResponse(prompt);
+        if (demoResult) {
+          setResponse(demoResult);
+          setIsDemoResponse(true);
+          setHistory((prev) => {
+            const filtered = prev.filter((item) => item.prompt !== prompt);
+            return [{ prompt, response: demoResult }, ...filtered].slice(0, 10);
+          });
+        } else {
+          setResponse("Veuillez entrer votre clé API (panneau gauche) pour utiliser l'assistant sur cette requête.");
+        }
+        setDemoUsesLeft((prev) => Math.max(0, prev - 1));
+      } else {
+        toast.error(err.message || "Une erreur est survenue.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [prompt, apiKey, modelChoice, demoUsesLeft, setHistory, setDemoUsesLeft]);
+
+  // Keyboard Shortcuts (Ctrl+Enter / Cmd+Enter to generate, Ctrl+Shift+E / Cmd+Shift+E to enhance)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleGenerate();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "E" || e.key === "e")) {
+        e.preventDefault();
+        handleEnhance();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleGenerate, handleEnhance]);
+
+  // Auto scroll logic when streaming response
+  useEffect(() => {
+    if (loading && scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, [response, loading]);
 
   return (
-    <div className="min-h-screen flex flex-row relative overflow-hidden">
+    <div className="h-[100dvh] w-screen flex flex-row relative overflow-hidden bg-slate-950">
       {/* Ambient background blobs */}
       <div className="hidden md:block fixed top-[-15%] left-[15%] w-[45%] h-[50%] bg-primary/8 rounded-full blur-[160px] pointer-events-none z-0 will-change-transform" />
       <div className="hidden md:block fixed bottom-[-10%] right-[-5%] w-[35%] h-[40%] bg-blue-900/15 rounded-full blur-[130px] pointer-events-none z-0 will-change-transform" />
@@ -53,19 +204,21 @@ export default function Home() {
       />
 
       {/* ── Sidebar (Desktop) ─────────────────── */}
-      <div className="hidden md:block">
+      <div className="hidden md:block h-full">
         <AppSidebar
           apiKey={apiKey}
           onOpenKeyModal={() => setIsKeyModalOpen(true)}
           onLogout={() => setApiKey(null)}
           onRestoreHistory={handleRestoreItem}
+          history={history}
+          setHistory={setHistory}
         />
       </div>
 
       {/* ── Main content ──────────────────────── */}
-      <main className="flex-1 flex flex-col min-h-screen relative z-10 overflow-y-auto">
+      <main className="flex-1 flex flex-col h-[100dvh] relative z-10 overflow-hidden">
         {/* Sticky top bar */}
-        <header className="border-b border-border/40 bg-background/60 backdrop-blur-2xl sticky top-0 z-50">
+        <header className="border-b border-border/40 bg-background/60 backdrop-blur-2xl flex-shrink-0 z-50">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-yellow-700 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary/20 flex-shrink-0">
@@ -94,6 +247,8 @@ export default function Home() {
                       handleRestoreItem(item);
                       setIsMobileMenuOpen(false);
                     }}
+                    history={history}
+                    setHistory={setHistory}
                     isMobileDrawer={true}
                   />
                 </SheetContent>
@@ -102,36 +257,72 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Hero + FormulaAssistant */}
-        <div className="flex-1 flex flex-col px-6 py-12 md:py-20 max-w-4xl w-full mx-auto">
-          {/* Hero text */}
-          <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
-            <h2 className="text-4xl md:text-5xl font-display text-white mb-4 tracking-tight leading-tight">
-              Générez des formules complexes{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-yellow-500 font-sans font-extrabold">
-                en un instant.
-              </span>
-            </h2>
-            <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-              Décrivez votre besoin en langage naturel. Notre IA rédige la formule exacte pour Excel et Google Sheets.
-            </p>
-          </div>
+        {/* Scrollable body */}
+        <div ref={scrollAreaRef} className="flex-1 overflow-y-auto results-scroll flex flex-col bg-transparent">
+          <div className={`flex-1 flex flex-col px-4 md:px-6 py-6 md:py-10 max-w-4xl w-full mx-auto ${!response && !loading ? "justify-center" : "justify-start"}`}>
+            {!response && !loading ? (
+              <div className="w-full flex flex-col items-center">
+                {/* Hero text */}
+                <div className="text-center mb-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                  <h2 className="text-3xl md:text-5xl font-display text-white mb-3 tracking-tight leading-tight">
+                    Générez des formules complexes{" "}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-yellow-500 font-sans font-extrabold font-display">
+                      en un instant.
+                    </span>
+                  </h2>
+                  <p className="text-sm md:text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
+                    Décrivez votre besoin en langage naturel. Notre IA rédige la formule exacte pour Excel et Google Sheets.
+                  </p>
+                </div>
 
-          <FormulaAssistant
-            apiKey={apiKey || ""}
-            freeUsesLeft={apiKey ? null : demoUsesLeft}
-            modelChoice={modelChoice}
-            onModelChange={setModelChoice}
-            onRequestKeyModal={() => setIsKeyModalOpen(true)}
-            onRestoreItem={registerRestoreCallback}
-            onGenerateSuccess={() => {
-              if (!apiKey) {
-                const newCount = Math.max(0, demoUsesLeft - 1);
-                setDemoUsesLeft(newCount);
-              }
-            }}
-          />
+                {/* Examples */}
+                <FormulaExamples
+                  onSelectExample={(example) => {
+                    setPrompt(example.label);
+                    const demoResult = findDemoResponse(example.keywords);
+                    if (demoResult) {
+                      setResponse(demoResult);
+                      setIsDemoResponse(true);
+                      setHistory((prev) => {
+                        const filtered = prev.filter((item) => item.prompt !== example.label);
+                        return [{ prompt: example.label, response: demoResult }, ...filtered].slice(0, 10);
+                      });
+                    } else {
+                      setResponse("");
+                      setIsDemoResponse(false);
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <FormulaResultArea
+                response={response}
+                loading={loading}
+                isDemoResponse={isDemoResponse}
+                copied={copied}
+                onCopy={handleCopy}
+                onDownload={handleDownload}
+              />
+            )}
+          </div>
         </div>
+
+        {/* Fixed bottom input bar */}
+        <FormulaInputBar
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          loading={loading}
+          enhancing={enhancing}
+          onGenerate={handleGenerate}
+          onEnhance={handleEnhance}
+          modelChoice={modelChoice}
+          onModelChange={setModelChoice}
+          freeUsesLeft={apiKey ? null : demoUsesLeft}
+          onRequestKeyModal={() => setIsKeyModalOpen(true)}
+          previousPrompt={previousPrompt}
+          onUndoEnhance={() => { setPrompt(previousPrompt); setPreviousPrompt(""); }}
+          apiKey={apiKey || ""}
+        />
       </main>
     </div>
   );

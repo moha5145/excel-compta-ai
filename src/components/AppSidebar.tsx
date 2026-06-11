@@ -16,6 +16,8 @@ interface AppSidebarProps {
   onOpenKeyModal: () => void;
   onLogout: () => void;
   onRestoreHistory: (item: HistoryItem) => void;
+  history?: HistoryItem[];
+  setHistory?: (history: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[])) => void;
 }
 
 export function AppSidebar({
@@ -24,16 +26,22 @@ export function AppSidebar({
   onLogout,
   onRestoreHistory,
   isMobileDrawer = false,
+  history: propsHistory,
+  setHistory: propsSetHistory,
 }: AppSidebarProps & { isMobileDrawer?: boolean }) {
   const [collapsed, setCollapsed] = useState(false);
   const isCollapsed = isMobileDrawer ? false : collapsed;
-  const [history, setHistory] = useLocalStorage<HistoryItem[]>("excel_compta_history", []);
-
+  
+  // Use state from props if passed, otherwise use local hook state
+  const [localHistory, setLocalHistory] = useLocalStorage<HistoryItem[]>("excel_compta_history", []);
+  const history = propsHistory !== undefined ? propsHistory : localHistory;
+  const setHistory = propsSetHistory !== undefined ? propsSetHistory : setLocalHistory;
 
   const handleClearHistory = () => {
     setHistory([]);
     toast.success("Historique effacé.");
   };
+
 
   return (
     <aside
