@@ -207,22 +207,29 @@ export function FormulaInputBar({
                     </svg>
                   </button>
                   {exampleMenuOpen && (
-                    <div className="absolute bottom-full right-0 z-50 mb-2 w-64 max-h-72 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-1 shadow-2xl">
-                      {FORMULA_EXAMPLES.slice(1).map((ex, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => {
-                            onSelectExample(ex);
-                            setSelectedExampleIndex(0);
-                            setExampleMenuOpen(false);
-                          }}
-                          className="w-full rounded-lg px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"
-                        >
-                          {ex.label}
-                        </button>
-                      ))}
-                    </div>
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40 bg-black/50"
+                        onClick={() => setExampleMenuOpen(false)}
+                        aria-hidden="true"
+                      />
+                      <div className="fixed inset-x-0 bottom-20 z-50 mx-4 max-h-72 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-1 shadow-2xl">
+                        {FORMULA_EXAMPLES.slice(1).map((ex, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              onSelectExample(ex);
+                              setSelectedExampleIndex(0);
+                              setExampleMenuOpen(false);
+                            }}
+                            className="w-full rounded-lg px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"
+                          >
+                            {ex.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -352,12 +359,7 @@ export function FormulaResultArea({
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                p({ children }: { children?: ReactNode }) {
-                  if (hasBlockMarkdownChild(children)) {
-                    return <>{children}</>;
-                  }
-                  return <p>{children}</p>;
-                },
+                p: ({ children }: { children?: ReactNode }) => <>{children}</>,
                 code({ inline, className, children }: { inline?: boolean; className?: string; children?: ReactNode }) {
                   return !inline ? (
                     <pre className="p-4 md:p-5 my-5 overflow-x-auto bg-slate-950/85 border border-slate-800/80 rounded-2xl text-yellow-300 font-mono text-sm md:text-base shadow-inner">
