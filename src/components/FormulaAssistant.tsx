@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useEffect, useState, useCallback, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Copy, Check, Sparkles, Wand2, Undo2, Zap, Brain, Key, Download } from "lucide-react";
+import { Loader2, Copy, Check, Sparkles, Wand2, Undo2, Zap, Brain, Key, Download, FileSpreadsheet } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -270,6 +270,7 @@ interface FormulaResultAreaProps {
   copied: boolean;
   onCopy: () => void;
   onDownload: () => void;
+  onDownloadExcel: () => void;
 }
 
 export function FormulaResultArea({
@@ -278,6 +279,7 @@ export function FormulaResultArea({
   copied,
   onCopy,
   onDownload,
+  onDownloadExcel,
 }: FormulaResultAreaProps) {
   const resultRef = useRef<HTMLDivElement>(null);
   const [formulaCopied, setFormulaCopied] = useState(false);
@@ -363,11 +365,11 @@ export function FormulaResultArea({
             </p>
           </div>
 
-          <div className="flex gap-2 w-full mt-6">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full mt-6">
             <Button
               variant="outline"
               onClick={onCopy}
-              className="flex-1 border-slate-700 bg-slate-800/50 hover:bg-slate-700 active:scale-95 text-white rounded-xl transition-all h-9 px-3 text-xs cursor-pointer focus-visible:outline-none"
+              className="flex-1 min-w-[120px] border-slate-700 bg-slate-800/50 hover:bg-slate-700 active:scale-95 text-white rounded-xl transition-all h-9 px-3 text-xs cursor-pointer focus-visible:outline-none"
             >
               {copied ? (
                 <><Check size={14} className="text-green-500 mr-1.5" /> Copié</>
@@ -378,10 +380,18 @@ export function FormulaResultArea({
             <Button
               variant="outline"
               onClick={onDownload}
-              className="flex-1 border-slate-700 bg-slate-800/50 hover:bg-slate-700 active:scale-95 text-white rounded-xl transition-all h-9 px-3 text-xs cursor-pointer focus-visible:outline-none"
+              className="flex-1 min-w-[120px] border-slate-700 bg-slate-800/50 hover:bg-slate-700 active:scale-95 text-white rounded-xl transition-all h-9 px-3 text-xs cursor-pointer focus-visible:outline-none"
               title="Télécharger la réponse (.txt)"
             >
-              <Download size={14} className="mr-1.5" /> Télécharger
+              <Download size={14} className="mr-1.5" /> Explication (.txt)
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onDownloadExcel}
+              className="flex-1 min-w-[120px] border-emerald-900/50 bg-emerald-950/20 hover:bg-emerald-900/30 hover:border-emerald-700 active:scale-95 text-emerald-400 rounded-xl transition-all h-9 px-3 text-xs cursor-pointer focus-visible:outline-none"
+              title="Télécharger l'exemple Excel (.xlsx)"
+            >
+              <FileSpreadsheet size={14} className="mr-1.5 text-emerald-500" /> Exemple (.xlsx)
             </Button>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
 import { AppSidebar } from "@/components/AppSidebar";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { downloadFormulaAsExcel } from "@/lib/excelExport";
 
 interface HistoryItem {
   prompt: string;
@@ -63,6 +64,18 @@ export default function Home() {
     URL.revokeObjectURL(url);
     toast.success("Fichier de formule téléchargé !");
   }, [response]);
+
+  // Download Excel example
+  const handleDownloadExcel = useCallback(async () => {
+    if (!response) return;
+    try {
+      await downloadFormulaAsExcel(response, prompt);
+      toast.success("Fichier Excel téléchargé !");
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error("Erreur lors de la génération du fichier Excel.");
+    }
+  }, [response, prompt]);
 
   // Enhance prompt
   const handleEnhance = useCallback(async () => {
@@ -291,6 +304,7 @@ export default function Home() {
                 copied={copied}
                 onCopy={handleCopy}
                 onDownload={handleDownload}
+                onDownloadExcel={handleDownloadExcel}
               />
             )}
           </div>

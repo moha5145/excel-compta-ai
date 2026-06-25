@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     if (!finalApiKey) {
       return NextResponse.json({ error: "Clé API manquante et aucune clé serveur configurée." }, { status: 400 });
     }
+    const apiKeyString = finalApiKey;
 
     // Rate Limiting
     const ip = getClientIp(req);
@@ -72,14 +73,15 @@ RÈGLES ABSOLUES à suivre sans exception :
 STRUCTURE DE RÉPONSE (respecter cet ordre) :
 1. La formule dans un bloc de code markdown.
 2. Une explication concise et professionnelle, adaptée à un financier ou comptable.
-3. La ligne de vérification (✅).`;
+3. INCLURE OBLIGATOIREMENT un tableau Markdown d'exemple avec des données fictives montrant les valeurs attendues dans les cellules pour que la formule fonctionne.
+4. La ligne de vérification (✅).`;
 
     const fullPrompt = `${systemInstruction}\n\nRequête utilisateur: ${prompt}`;
 
     const selectedModel = modelChoice === "pro" ? "gemini-3.1-pro" : "gemini-3.5-flash";
 
     async function generateStream(modelName: string) {
-      const genAI = new GoogleGenerativeAI(finalApiKey);
+      const genAI = new GoogleGenerativeAI(apiKeyString);
       const model = genAI.getGenerativeModel({ model: modelName });
       return model.generateContentStream(fullPrompt);
     }

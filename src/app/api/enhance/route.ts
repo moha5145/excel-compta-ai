@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     if (!finalApiKey) {
       return NextResponse.json({ error: "Clé API manquante et aucune clé serveur configurée." }, { status: 400 });
     }
+    const apiKeyString = finalApiKey;
 
     // Rate Limiting
     const ip = getClientIp(req);
@@ -69,7 +70,7 @@ Exemple de sortie : "Je souhaite obtenir une formule permettant de calculer la s
     const fullPrompt = `${systemInstruction}\n\nRequête brute: ${prompt}`;
 
     async function generateContent(modelName: string) {
-      const genAI = new GoogleGenerativeAI(finalApiKey);
+      const genAI = new GoogleGenerativeAI(apiKeyString);
       const model = genAI.getGenerativeModel({ model: modelName });
       return model.generateContent(fullPrompt);
     }
