@@ -452,6 +452,7 @@ export async function downloadFormulaAsExcel(
   workbook.creator = "Excel-Compta AI";
   workbook.created = new Date();
   workbook.modified = new Date();
+  workbook.calcProperties.fullCalcOnLoad = true;
 
   const formulaRaw = extractFormula(response);
   const tables = extractTables(response);
@@ -789,7 +790,7 @@ export async function downloadFormulaAsExcel(
     );
 
     const resCell = resultRowSim.getCell(3);
-    resCell.value = { formula: formulaFR };
+    resCell.value = { formula: formulaFR, result: 0 };
     resCell.font = { name: "Consolas", size: 12, bold: true, color: { argb: "FF166534" } };
     resCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0FDF4" } };
     resCell.numFmt = "#,##0.00";
