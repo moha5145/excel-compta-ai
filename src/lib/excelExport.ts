@@ -30,81 +30,106 @@ function detectParamType(name: string): SimParam['type'] {
   return 'number';
 }
 
-// Extrait les paramètres de simulation depuis un tableau Markdown
+// Extrait les paramètres de simulation depuis un tableau Markdown multi-colonnes
 function extractSimulationParams(
   table: ExtractedTable
-): { params: SimParam[]; formulaRaw: string } {
+): { params: SimParam[]; columns: SimColumn[]; formulaRaw: string } {
   const params: SimParam[] = [];
+  const columns: SimColumn[] = [];
   let formulaRaw = "";
 
-  for (const row of table.rows) {
-    const cellRef = row[0]?.trim() || "";
-    const description = row[1]?.trim() || "";
-    const valueStr = row[2]?.trim() || "";
-    const resultStr = row[3]?.trim() || "";
+  // Headers = première ligne, en excluant "Ligne"
+  const headers = table.rows[0].slice(1);
 
-    // Si la colonne "Valeur" contient une formule → c'est la ligne de sortie
-    if (valueStr.startsWith("=")) {
-      formulaRaw = valueStr;
-      continue;
-    }
-
-    // Nettoyer la valeur : retirer espaces, %, symboles monétaires
-    const hasPercent = /%/.test(valueStr) || /%/.test(resultStr);
-    const cleaned = valueStr
-      .replace(/\s/g, "")
-      .replace(/%/g, "")
-      .replace(/€|euro/gi, "")
-      .replace(",", ".");
-    const numVal = Number(cleaned);
-    if (isNaN(numVal) || valueStr === "") continue;
-
-    const paramType = detectParamType(description);
-
-    // Extraire l'unité depuis le résultat attendu OU la description
-    // Ordre important : durée AVANT prêt car "Durée du Prêt" contient les deux
-    let unit = "";
-    if (/%|pourcent|taux/i.test(description)) unit = "%";
-    else if (/dur[ée]e|ann[ée]e|ans|annuel/i.test(description)) unit = "ans";
-    else if (/€|euro|montant|salaire|prime|loyer/i.test(description)) unit = "€";
-    else if (/pr[êe]t|emprunt|chiffre/i.test(description)) unit = "€";
-    else if (/mois/i.test(description)) unit = "mois";
-    else if (/jour/i.test(description)) unit = "jours";
-
-    // Pour les pourcentages : stocker la valeur pour affichage
-    // Si l'IA génère 0.035 → afficher 3.5 (multiplier par 100)
-    // Si l'IA génère 3.5 → afficher 3.5 (tel quel)
-    let displayValue = numVal;
-    let needsDivideBy100 = false;
-
-    if (paramType === "percentage" || hasPercent) {
-      // Stocker la valeur entière pour l'affichage (3.5 pour 3.5%, 20 pour 20%)
-      // Le numFmt 0.0"%" affiche "3,5%" sans traiter la cellule comme un pourcentage
-      // needsDivideBy100 = true TOUJOURS pour les pourcentages
-      // La détection intelligente dans rewriteFormulaForSimulation décidera si
-      // ajouter /100 ou non selon le contexte de la formule originale
-      if (numVal > 0 && numVal < 1) {
-        // L'IA a mis 0.035 → multiplier pour affichage
-        displayValue = numVal * 100;
-      } else {
-        // L'IA a mis 3.5 → garder tel quel
-        displayValue = numVal;
-      }
-      needsDivideBy100 = true;
-      unit = "%";
-    }
-
-    params.push({
-      name: description,
-      value: displayValue,
-      type: (paramType === "percentage" || hasPercent) ? "percentage" : paramType,
-      unit,
-      cellRef,
-      needsDivideBy100,
-    });
+  // Initialiser les colonnes
+  for (let c = 0; c < headers.length; c++) {
+    const colLetter = String.fromCharCode(67 + c); // C=67, D=68, E=69
+    columns.push({ letter: colLetter, header: headers[c], params: [] });
   }
 
-  return { params, formulaRaw };
+  // Extraire les données (rows 1 à N-1, exclure la dernière ligne si formule)
+  const lastRow = table.rows[table.rows.length - 1];
+  const hasFormulaRow = lastRow.some(cell => cell.startsWith("="));
+  const dataEndRow = hasFormulaRow ? table.rows.length - 1 : table.rows.length;
+
+  const dataStartRow = 10;
+
+  for (let rowIdx = 1; rowIdx < dataEndRow; rowIdx++) {
+    const row = table.rows[rowIdx];
+
+    for (let colIdx = 0; colIdx < headers.length; colIdx++) {
+      const value = row[colIdx + 1]?.trim() || "";
+      if (!value) continue;
+
+      const col = columns[colIdx];
+      const cellRef = `${col.letter}${dataStartRow + rowIdx - 1}`;
+
+      // Détecter le type
+      const isDate = /\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/.test(value) ||
+                     /\d{4}-\d{2}-\d{2}/.test(value);
+      const cleaned = value.replace(/\s/g, "").replace(/%/g, "").replace(/€|euro/gi, "").replace(",", ".");
+      const numVal = Number(cleaned);
+      const hasPercent = /%/.test(value);
+      const isText = isNaN(numVal) && !isDate && !hasPercent;
+
+      let paramType: SimParam['type'];
+      let rawValue: string;
+      let paramValue: number;
+      let unit = "";
+      let needsDivideBy100 = false;
+
+      if (isText) {
+        paramType = 'text';
+        rawValue = value;
+        paramValue = 0;
+      } else if (isDate) {
+        paramType = 'date';
+        rawValue = value;
+        paramValue = 0;
+      } else if (hasPercent || (numVal > 0 && numVal < 1 && /\d/.test(value))) {
+        paramType = 'percentage';
+        rawValue = value;
+        paramValue = numVal > 0 && numVal < 1 ? numVal * 100 : numVal;
+        needsDivideBy100 = true;
+        unit = "%";
+      } else {
+        paramType = detectParamType(col.header);
+        rawValue = value;
+        paramValue = numVal;
+
+        // Unité depuis le header
+        if (/%|taux|tx/i.test(col.header)) { unit = "%"; needsDivideBy100 = true; paramType = 'percentage'; }
+        else if (/€|euro|montant|salaire|prime|loyer/i.test(col.header)) unit = "€";
+        else if (/dur[ée]e|ann[ée]e|ans|annuel/i.test(col.header)) unit = "ans";
+        else if (/mois/i.test(col.header)) unit = "mois";
+        else if (/jour/i.test(col.header)) unit = "jours";
+      }
+
+      const param: SimParam = {
+        name: value,
+        value: paramValue,
+        rawValue,
+        type: paramType,
+        unit,
+        cellRef,
+        colLetter: col.letter,
+        colName: col.header,
+        rowIndex: rowIdx - 1,
+        needsDivideBy100,
+      };
+
+      params.push(param);
+      col.params.push(param);
+    }
+  }
+
+  // Détecter la formule
+  if (hasFormulaRow) {
+    const formulaCell = lastRow.find(cell => cell.startsWith("="));
+    if (formulaCell) formulaRaw = formulaCell;
+  }
+
+  return { params, columns, formulaRaw };
 }
 
 // Réécrit une formule pour la simulation : références → cellules Zone 2, taux/100
@@ -124,9 +149,24 @@ function rewriteFormulaForSimulation(
   // Réécrire les références
   let rewritten = formula;
   for (const [origRef, targetRef] of Object.entries(cellMap)) {
+    const param = params.find(p => p.cellRef === origRef);
     const escaped = origRef.replace(/\$/g, "\\$");
     const regex = new RegExp(`\\b${escaped}(?!\\w)`, "g");
-    rewritten = rewritten.replace(regex, targetRef);
+
+    if (param?.type === "text") {
+      // Vérifier si la référence fait partie d'une plage (ex: C12:C13)
+      const rangeWithRef = new RegExp(`:\\s*${escaped}|${escaped}\\s*:`, "i").test(rewritten);
+      if (rangeWithRef) {
+        // Plage : garder comme référence cellule Zone 2 (sinon "val1":"val2" est invalide)
+        rewritten = rewritten.replace(regex, targetRef);
+      } else {
+        // Référence isolée : remplacer par la valeur textuelle entre guillemets
+        rewritten = rewritten.replace(regex, `"${param.rawValue}"`);
+      }
+    } else {
+      // Numérique/date : remplacer par la cellule Zone 2
+      rewritten = rewritten.replace(regex, targetRef);
+    }
   }
 
   // Insérer /100 pour les taux — détection intelligente
@@ -189,10 +229,20 @@ interface ExtractedTable {
 interface SimParam {
   name: string;
   value: number;
-  type: 'percentage' | 'currency' | 'integer' | 'number';
+  rawValue: string;
+  type: 'percentage' | 'currency' | 'integer' | 'number' | 'text' | 'date';
   unit: string;
   cellRef: string;
+  colLetter: string;
+  colName: string;
+  rowIndex: number;
   needsDivideBy100: boolean;
+}
+
+interface SimColumn {
+  letter: string;
+  header: string;
+  params: SimParam[];
 }
 
 // Extrait les tableaux Markdown pour en faire des données structurées
@@ -424,12 +474,14 @@ export async function downloadFormulaAsExcel(
 
   // ── Pré-extraction des paramètres de simulation
   let simParams: SimParam[] = [];
+  let simColumns: SimColumn[] = [];
   let simFormulaRaw = formulaRaw;
   let zone1Formula = "";
 
   if (tables.length > 0) {
-    const { params, formulaRaw: extracted } = extractSimulationParams(tables[0]);
+    const { params, columns, formulaRaw: extracted } = extractSimulationParams(tables[0]);
     simParams = params;
+    simColumns = columns;
     simFormulaRaw = extracted || formulaRaw;
 
     if (simParams.length > 0 && simFormulaRaw) {
@@ -529,7 +581,6 @@ export async function downloadFormulaAsExcel(
 
       // Colonne C : Valeur (cellule modifiable, fond jaune)
       const valCell = row.getCell(3);
-      valCell.value = p.value;
       valCell.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: SLATE_900 } };
       valCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: LIGHT_YELLOW } };
       valCell.alignment = { horizontal: "right", vertical: "middle" };
@@ -540,14 +591,23 @@ export async function downloadFormulaAsExcel(
         right: { style: "thin", color: { argb: GOLD_BORDER } },
       };
 
-      // Format selon le type
-      if (p.type === "percentage") {
+      if (p.type === "text") {
+        valCell.value = p.rawValue;
+        valCell.alignment = { horizontal: "left", vertical: "middle" };
+      } else if (p.type === "date") {
+        valCell.value = p.rawValue;
+        valCell.alignment = { horizontal: "center", vertical: "middle" };
+      } else if (p.type === "percentage") {
+        valCell.value = p.value;
         valCell.numFmt = '0.0"%"';
       } else if (p.type === "currency") {
+        valCell.value = p.value;
         valCell.numFmt = "#,##0.00";
       } else if (p.type === "integer") {
+        valCell.value = p.value;
         valCell.numFmt = "0";
       } else {
+        valCell.value = p.value;
         valCell.numFmt = "#,##0.##";
       }
 
