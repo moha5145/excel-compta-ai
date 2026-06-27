@@ -592,7 +592,9 @@ export async function downloadFormulaAsExcel(
     resCell.value = { formula: activeFormula.replace(/^=/, "") };
     resCell.font = { name: "Consolas", size: 12, bold: true, color: { argb: "FF166534" } };
     resCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0FDF4" } };
-    resCell.numFmt = "#,##0.00";
+    // Format texte pour les formules de concaténation (&), sinon numérique
+    const isTextFormula = /&\s*["']|["']\s*&|TEXTE\s*\(|TEXT\s*\(/i.test(activeFormula);
+    resCell.numFmt = isTextFormula ? "@" : "#,##0.00";
     resCell.alignment = { horizontal: "right", vertical: "middle" };
     resCell.border = {
       top: { style: "medium", color: { argb: "FF16A34A" } },
