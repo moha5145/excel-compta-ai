@@ -581,7 +581,7 @@ export async function downloadFormulaAsExcel(
         if (param) {
           if (isResult && activeFormula) {
             let rowFormula = activeFormula;
-            const cellRefRegex = new RegExp(`(?<!:)(\\b[A-Z]+)${DATA_START_ROW}\\b(?!:)`, 'g');
+            const cellRefRegex = new RegExp(`(?<!:)(\\b[A-Z]{1,3})${DATA_START_ROW}\\b(?![:(])`, 'g');
             rowFormula = rowFormula.replace(cellRefRegex, (match, col) => `${col}${DATA_START_ROW + r}`);
             cell.value = { formula: rowFormula.replace(/^=/, "") };
             cell.numFmt = "#,##0.00";
