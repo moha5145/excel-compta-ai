@@ -296,12 +296,12 @@ export default function Home() {
       <main className="flex-1 flex flex-col h-[100dvh] relative z-10 overflow-hidden">
         {/* Sticky top bar */}
         <header className="border-b border-border/40 bg-background/60 backdrop-blur-2xl flex-shrink-0 z-50">
-          <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center justify-between px-3 py-2.5 sm:px-6 sm:py-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-yellow-700 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary/20 flex-shrink-0">
                 ∑
               </div>
-              <h1 className="text-xl font-display text-white tracking-tight">
+              <h1 className="text-base sm:text-xl font-display text-white tracking-tight">
                 Excel-Compta <span className="text-primary font-sans font-medium">AI</span>
               </h1>
             </div>
@@ -336,18 +336,18 @@ export default function Home() {
 
         {/* Scrollable body */}
         <div ref={scrollAreaRef} className="flex-1 overflow-y-auto results-scroll flex flex-col bg-transparent">
-          <div className={`flex-1 flex flex-col px-6 py-6 md:py-10 w-full mx-auto ${!response && !loading ? "max-w-4xl justify-center" : "justify-start"}`}>
+          <div className={`flex-1 flex flex-col px-3 py-4 sm:px-6 sm:py-6 md:py-10 w-full mx-auto ${!response && !loading ? "max-w-4xl justify-center" : "justify-start"}`}>
             {!response && !loading ? (
               <div className="w-full flex flex-col items-center">
                 {/* Hero text */}
                 <div className="text-center mb-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                  <h2 className="text-3xl md:text-5xl font-display text-white mb-3 tracking-tight leading-tight">
+                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-display text-white mb-2 sm:mb-3 tracking-tight leading-tight">
                     Générez des formules complexes{" "}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-yellow-500 font-sans font-extrabold font-display">
                       en un instant.
                     </span>
                   </h2>
-                  <p className="text-sm md:text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
                     Décrivez votre besoin en langage naturel. Notre IA rédige la formule exacte pour Excel et Google Sheets.
                   </p>
                 </div>
