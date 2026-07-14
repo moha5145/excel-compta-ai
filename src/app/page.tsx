@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { ExportFormat } from "@/lib/excelExport";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function normalizeMarkdownBlocks(markdown: string) {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
@@ -270,10 +271,10 @@ export default function Home() {
   }, [loading]);
 
   return (
-    <div className="h-[100dvh] w-screen flex flex-row relative overflow-hidden bg-slate-950">
+    <div className="h-[100dvh] w-screen flex flex-row relative overflow-hidden bg-background">
       {/* Ambient background blobs */}
       <div className="hidden md:block fixed top-[-15%] left-[15%] w-[45%] h-[50%] bg-primary/8 rounded-full blur-[160px] pointer-events-none z-0 will-change-transform" />
-      <div className="hidden md:block fixed bottom-[-10%] right-[-5%] w-[35%] h-[40%] bg-blue-900/15 rounded-full blur-[130px] pointer-events-none z-0 will-change-transform" />
+      <div className="hidden md:block fixed bottom-[-10%] right-[-5%] w-[35%] h-[40%] bg-primary/5 rounded-full blur-[130px] pointer-events-none z-0 will-change-transform" />
 
       {/* ── Modal Clé API ─────────────────────── */}
       <ApiKeyModal 
@@ -313,13 +314,18 @@ export default function Home() {
               </h1>
             </div>
             
+            {/* Theme Toggle */}
+            <div className="hidden md:flex items-center">
+              <ThemeToggle />
+            </div>
+
             {/* Hamburger menu for mobile */}
             <div className="md:hidden">
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger className="inline-flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors h-9 w-9 cursor-pointer">
+                <SheetTrigger className="inline-flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors h-9 w-9 cursor-pointer">
                   <Menu size={20} />
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 bg-slate-900 border-r border-slate-800 w-72">
+                <SheetContent side="left" className="p-0 bg-card border-r border-border w-72">
                   <AppSidebar
                     apiKey={apiKey}
                     onOpenKeyModal={() => {
@@ -368,17 +374,17 @@ export default function Home() {
                   <div key={idx} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
                     <div className={`max-w-[85%] px-4 py-3 rounded-2xl ${
                       msg.role === "user"
-                        ? "bg-primary/20 border border-primary/30 text-white text-sm"
-                        : "bg-slate-800/80 border border-slate-700/50 text-slate-300 text-sm prose prose-invert prose-p:text-slate-300 prose-a:text-primary hover:prose-a:text-yellow-400 prose-strong:text-white prose-li:text-slate-300 max-w-none"
+                        ? "bg-primary/20 border border-primary/30 text-foreground text-sm"
+                        : "bg-muted/80 border border-border/50 text-muted-foreground text-sm prose prose-invert prose-p:text-muted-foreground prose-a:text-primary hover:prose-a:text-yellow-400 prose-strong:text-foreground prose-li:text-muted-foreground max-w-none"
                     }`}>
                       {msg.role === "model" ? (
                         <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                           pre({ children, className }: { children?: ReactNode; className?: string }) {
                             return (
-                              <pre className={`relative p-3 my-2 overflow-x-auto bg-slate-900/85 border border-slate-800/80 rounded-xl text-yellow-300 font-mono text-xs shadow-inner ${className || ""}`}>
+                              <pre className={`relative p-3 my-2 overflow-x-auto bg-muted border border-border rounded-xl text-yellow-300 font-mono text-xs shadow-inner ${className || ""}`}>
                                 <button
                                   onClick={() => navigator.clipboard.writeText(String(children))}
-                                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-800/80 border border-slate-700/50 text-slate-400 hover:text-yellow-300 hover:bg-slate-700/80 transition-all"
+                                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-muted/80 border border-border/50 text-muted-foreground hover:text-yellow-300 hover:bg-muted transition-all"
                                   aria-label="Copier la formule"
                                 >
                                   <Copy size={12} />
@@ -389,7 +395,7 @@ export default function Home() {
                           },
                           code({ inline, className, children }: { inline?: boolean; className?: string; children?: ReactNode }) {
                             if (inline) {
-                              return <code className={`bg-slate-700 text-yellow-200 px-1.5 py-0.5 rounded-md text-xs font-mono ${className || ""}`}>{children}</code>;
+                              return <code className={`bg-muted text-yellow-200 px-1.5 py-0.5 rounded-md text-xs font-mono ${className || ""}`}>{children}</code>;
                             }
                             return <code className={className}>{children}</code>;
                           },

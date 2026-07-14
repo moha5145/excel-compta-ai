@@ -111,32 +111,32 @@ export function FormulaInputBar({
   }, [prompt]);
 
   return (
-    <div className="w-full bg-slate-950/90 backdrop-blur-2xl border-t border-slate-800/80 py-3 px-3 sm:py-4 sm:px-6 flex-shrink-0 z-30">
+    <div className="w-full bg-background/90 backdrop-blur-2xl border-t border-border/80 py-3 px-3 sm:py-4 sm:px-6 flex-shrink-0 z-30">
       <div className="max-w-4xl mx-auto flex flex-col gap-2">
         {/* Banner removed: modal will handle it instead */}
 
         {/* Input area bubble */}
-        <div className="relative flex flex-col bg-slate-900/60 border border-slate-700/40 rounded-2xl p-2 sm:p-2.5 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+        <div className="relative flex flex-col bg-card border border-border/40 rounded-2xl p-2 sm:p-2.5 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
           <textarea
             id="prompt-input"
             ref={textareaRef}
             placeholder="Ex: Si la cellule A1 est supérieure à 1000, appliquer une remise de 10% (A1*0.1), sinon 0."
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value.slice(0, 3000))}
-            className="w-full bg-transparent border-0 text-white text-sm sm:text-base py-1 px-2 sm:px-3 focus:outline-none focus:ring-0 resize-none min-h-[40px] sm:min-h-[44px] max-h-[120px] sm:max-h-[160px] placeholder:text-slate-500 overflow-y-auto textarea-autosize"
+            className="w-full bg-transparent border-0 text-foreground text-sm sm:text-base py-1 px-2 sm:px-3 focus:outline-none focus:ring-0 resize-none min-h-[40px] sm:min-h-[44px] max-h-[120px] sm:max-h-[160px] placeholder:text-muted-foreground overflow-y-auto textarea-autosize"
             rows={1}
             aria-label="Description de la formule à générer"
           />
 
-          <div className="flex flex-wrap items-center justify-between mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-slate-800/60 px-0.5 sm:px-1 gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap items-center justify-between mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-border/60 px-0.5 sm:px-1 gap-1.5 sm:gap-2">
             {/* Left actions: Model choice, Format, Enhance */}
             <div className="flex items-center gap-1.5 sm:gap-2">
               {apiKey && onModelChange && (
-                <div className="flex items-center gap-1 bg-slate-950/80 border border-slate-800 p-0.5 rounded-lg text-xs">
+                <div className="flex items-center gap-1 bg-muted/80 border border-border p-0.5 rounded-lg text-xs">
                   <button
                     type="button"
                     onClick={() => onModelChange("flash")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${modelChoice === "flash" ? "bg-primary text-white font-medium shadow-sm" : "text-slate-400 hover:text-white"}`}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${modelChoice === "flash" ? "bg-primary text-white font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                     title="Modèle rapide (Gemini 3.5 Flash)"
                   >
                     <Zap size={11} /> Flash
@@ -144,25 +144,25 @@ export function FormulaInputBar({
                   <button
                     type="button"
                     onClick={() => onModelChange("pro")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${modelChoice === "pro" ? "bg-gradient-to-r from-yellow-600 to-yellow-500 text-white font-medium shadow-sm" : "text-slate-400 hover:text-white"}`}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${modelChoice === "pro" ? "bg-gradient-to-r from-yellow-600 to-yellow-500 text-white font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                     title="Modèle expert pour requêtes complexes (Gemini 3.1 Pro)"
                   >
                     <Brain size={11} /> Pro
                   </button>
                 </div>
               )}
-              <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-950/80 border border-slate-800 p-0.5 rounded-lg text-xs">
-                <FileType size={11} className="text-slate-500 ml-1 sm:ml-1.5 flex-shrink-0 hidden sm:block" />
+              <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/80 border border-border p-0.5 rounded-lg text-xs">
+                <FileType size={11} className="text-muted-foreground ml-1 sm:ml-1.5 flex-shrink-0 hidden sm:block" />
                 <select
                   value={format}
                   onChange={(e) => onFormatChange(e.target.value as ExportFormat)}
-                  className="bg-transparent text-slate-400 hover:text-white text-[10px] sm:text-[11px] py-1 px-1 sm:px-1.5 rounded-md border-0 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer appearance-none max-w-[55px] sm:max-w-none text-ellipsis overflow-hidden"
+                  className="bg-transparent text-muted-foreground hover:text-foreground text-[10px] sm:text-[11px] py-1 px-1 sm:px-1.5 rounded-md border-0 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer appearance-none max-w-[55px] sm:max-w-none text-ellipsis overflow-hidden"
                   aria-label="Format de sortie"
                 >
-                  <option value="excel-en" className="bg-slate-900">Excel EN</option>
-                  <option value="excel-fr" className="bg-slate-900">Excel FR</option>
-                  <option value="libreoffice-en" className="bg-slate-900">LibreOffice EN</option>
-                  <option value="libreoffice-fr" className="bg-slate-900">LibreOffice FR</option>
+                  <option value="excel-en" className="bg-background">Excel EN</option>
+                  <option value="excel-fr" className="bg-background">Excel FR</option>
+                  <option value="libreoffice-en" className="bg-background">LibreOffice EN</option>
+                  <option value="libreoffice-fr" className="bg-background">LibreOffice FR</option>
                 </select>
               </div>
               <Button
@@ -196,7 +196,7 @@ export function FormulaInputBar({
               {onSelectExample && (
                 <div className="relative w-8 sm:w-48">
                   <select
-                    className="hidden sm:block w-full h-8 bg-transparent text-[11px] text-slate-400 hover:text-white border border-slate-800/60 rounded-lg px-2 pr-6 appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/50 transition-colors truncate"
+                    className="hidden sm:block w-full h-8 bg-transparent text-[11px] text-muted-foreground hover:text-foreground border border-border/60 rounded-lg px-2 pr-6 appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/50 transition-colors truncate"
                     value={selectedExampleIndex}
                     onChange={(e) => {
                       const idx = Number(e.target.value);
@@ -207,17 +207,17 @@ export function FormulaInputBar({
                       }
                     }}
                   >
-                    <option value={0} disabled className="bg-slate-900">
+                    <option value={0} disabled className="bg-background">
                       {selectedExampleLabel || "Exemples"}
                     </option>
                     {FORMULA_EXAMPLES.slice(1).map((ex, i) => (
-                      <option key={i} value={i + 1} className="bg-slate-900 text-slate-200 truncate">{ex.label}</option>
+                      <option key={i} value={i + 1} className="bg-background text-foreground truncate">{ex.label}</option>
                     ))}
                   </select>
                   <button
                     type="button"
                     onClick={() => setExampleMenuOpen((open) => !open)}
-                    className="sm:hidden w-8 h-8 rounded-lg border border-slate-800/60 bg-slate-900/30 text-slate-400 hover:text-white hover:bg-slate-800/60 flex items-center justify-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    className="sm:hidden w-8 h-8 rounded-lg border border-border/60 bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center justify-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/50"
                     aria-label="Sélectionner un exemple rapide"
                     aria-expanded={exampleMenuOpen}
                   >
@@ -234,7 +234,7 @@ export function FormulaInputBar({
                         onClick={() => setExampleMenuOpen(false)}
                         aria-hidden="true"
                       />
-                      <div className="fixed inset-x-0 bottom-20 z-50 mx-4 max-h-72 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-1 shadow-2xl">
+                      <div className="fixed inset-x-0 bottom-20 z-50 mx-4 max-h-72 overflow-y-auto rounded-xl border border-border bg-background p-1 shadow-2xl">
                         {FORMULA_EXAMPLES.slice(1).map((ex, i) => (
                           <button
                             key={i}
@@ -245,7 +245,7 @@ export function FormulaInputBar({
                               setSelectedExampleIndex(0);
                               setExampleMenuOpen(false);
                             }}
-                            className="w-full rounded-lg px-3 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"
+                            className="w-full rounded-lg px-3 py-2 text-left text-xs text-foreground hover:bg-muted hover:text-foreground"
                           >
                             {ex.label}
                           </button>
@@ -255,7 +255,7 @@ export function FormulaInputBar({
                   )}
                 </div>
               )}
-              <span className={`text-[10px] hidden sm:inline ${prompt.length >= 2700 ? "text-red-400 font-semibold animate-pulse" : "text-slate-500"}`}>
+              <span className={`text-[10px] hidden sm:inline ${prompt.length >= 2700 ? "text-red-400 font-semibold animate-pulse" : "text-muted-foreground"}`}>
                 {prompt.length}/3000
               </span>
 
@@ -277,8 +277,8 @@ export function FormulaInputBar({
         </div>
 
         {/* Shortcuts info - hidden on mobile */}
-        <p className="hidden sm:block text-center text-[10px] text-slate-500 mt-1 select-none">
-          Raccourcis : <kbd className="bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 text-slate-400 font-mono">Ctrl+Entrée</kbd> pour générer · <kbd className="bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 text-slate-400 font-mono">Ctrl+Maj+E</kbd> pour améliorer
+        <p className="hidden sm:block text-center text-[10px] text-muted-foreground mt-1 select-none">
+          Raccourcis : <kbd className="bg-muted px-1.5 py-0.5 rounded border border-border text-muted-foreground font-mono">Ctrl+Entrée</kbd> pour générer · <kbd className="bg-muted px-1.5 py-0.5 rounded border border-border text-muted-foreground font-mono">Ctrl+Maj+E</kbd> pour améliorer
         </p>
       </div>
     </div>
@@ -324,15 +324,15 @@ export function FormulaResultArea({
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-4 sm:gap-6 py-4 sm:py-6 md:py-10 animate-in fade-in duration-500">
       {/* Skeleton Loading State */}
       {loading && !response && (
-        <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-slate-800/80 p-5 sm:p-8 shadow-xl flex flex-col gap-3 sm:gap-4 animate-in fade-in duration-300">
+        <div className="bg-muted/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-border/80 p-5 sm:p-8 shadow-xl flex flex-col gap-3 sm:gap-4 animate-in fade-in duration-300">
           <div className="flex items-center gap-2 mb-1">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            <span className="text-sm text-slate-400 font-medium">Rédaction de la formule...</span>
+            <span className="text-sm text-muted-foreground font-medium">Rédaction de la formule...</span>
           </div>
-          <Skeleton className="h-4 w-3/4 bg-slate-800" />
-          <Skeleton className="h-4 w-full bg-slate-800" />
-          <Skeleton className="h-24 w-full bg-slate-800/50 rounded-xl" />
-          <Skeleton className="h-4 w-1/2 bg-slate-800" />
+          <Skeleton className="h-4 w-3/4 bg-muted" />
+          <Skeleton className="h-4 w-full bg-muted" />
+          <Skeleton className="h-24 w-full bg-muted/50 rounded-xl" />
+          <Skeleton className="h-4 w-1/2 bg-muted" />
         </div>
       )}
 
@@ -340,7 +340,7 @@ export function FormulaResultArea({
       {response && (
         <div
           ref={resultRef}
-          className="bg-slate-900/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-primary/20 py-4 sm:py-6 md:py-8 px-2 sm:px-2.5 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-500"
+          className="bg-card backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-primary/20 py-4 sm:py-6 md:py-8 px-2 sm:px-2.5 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-500"
         >
           <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70" />
 
@@ -351,28 +351,30 @@ export function FormulaResultArea({
             </h3>
           </div>
 
-          <div className="prose prose-invert prose-p:text-slate-350 prose-a:text-primary hover:prose-a:text-yellow-400 prose-strong:text-white prose-li:text-slate-300 max-w-none text-xs sm:text-sm md:text-base leading-relaxed">
+          <div className="prose prose-invert prose-p:text-muted-foreground prose-a:text-primary hover:prose-a:text-yellow-400 prose-strong:text-foreground prose-li:text-muted-foreground max-w-none text-xs sm:text-sm md:text-base leading-relaxed">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
                 p: ({ children }: { children?: ReactNode }) => <>{children}</>,
-                code({ inline, className, children }: { inline?: boolean; className?: string; children?: ReactNode }) {
-                  return !inline ? (
-                    <pre className="relative p-3 sm:p-4 md:p-5 my-3 sm:my-5 overflow-x-auto bg-slate-950/85 border border-slate-800/80 rounded-xl sm:rounded-2xl text-yellow-300 font-mono text-xs sm:text-sm md:text-base shadow-inner group">
+                pre({ children, className }: { children?: ReactNode; className?: string }) {
+                  return (
+                    <pre className={`relative p-3 sm:p-4 md:p-5 my-3 sm:my-5 overflow-x-auto bg-muted border border-border rounded-xl sm:rounded-2xl text-yellow-300 font-mono text-xs sm:text-sm md:text-base shadow-inner group ${className || ""}`}>
                       <button
                         onClick={() => handleCopyFormula(String(children))}
-                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-800/80 border border-slate-700/50 text-slate-400 hover:text-yellow-300 hover:bg-slate-700/80 sm:opacity-0 sm:group-hover:opacity-100 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-muted/80 border border-border/50 text-muted-foreground hover:text-yellow-300 hover:bg-muted transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         aria-label="Copier la formule"
                       >
                         {formulaCopied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                       </button>
                       <code className={className}>{children}</code>
                     </pre>
-                  ) : (
-                    <code className="bg-slate-800 text-yellow-250 px-1.5 py-0.5 rounded-md text-xs font-mono" {...{}}>
-                      {children}
-                    </code>
                   );
+                },
+                code({ inline, className, children }: { inline?: boolean; className?: string; children?: ReactNode }) {
+                  if (inline) {
+                    return <code className={`bg-muted text-yellow-250 px-1.5 py-0.5 rounded-md text-xs font-mono ${className || ""}`}>{children}</code>;
+                  }
+                  return <code className={className}>{children}</code>;
                 },
               }}
             >
@@ -380,10 +382,10 @@ export function FormulaResultArea({
             </ReactMarkdown>
           </div>
 
-          <div className="mt-4 sm:mt-6 flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-slate-800/40 rounded-xl sm:rounded-2xl border border-slate-700/50">
+          <div className="mt-4 sm:mt-6 flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/50">
             <span className="text-yellow-500 text-sm sm:text-base flex-shrink-0">⚠️</span>
-            <p className="text-[10px] sm:text-[11px] text-slate-400 leading-relaxed">
-              <span className="text-slate-300 font-medium">Vérifiez avant d&apos;utiliser en production.</span>{" "}
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-relaxed">
+              <span className="text-foreground font-medium">Vérifiez avant d&apos;utiliser en production.</span>{" "}
               Les formules générées par IA peuvent contenir des erreurs. Testez toujours sur un jeu de données réel avant de l&apos;intégrer à vos fichiers officiels.
             </p>
           </div>

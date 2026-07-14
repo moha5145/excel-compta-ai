@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface HistoryItem {
   id: string;
@@ -95,26 +96,32 @@ export function AppSidebar({
         ? "relative w-full h-full flex flex-col bg-transparent"
         : `relative flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out
           ${isCollapsed ? "w-14" : "w-72"}
-          bg-slate-900/60 backdrop-blur-xl border-r border-slate-800/60 min-h-full overflow-visible`}
+          bg-background/60 backdrop-blur-xl border-r border-border/60 min-h-full overflow-visible`}
     >
       {/* Toggle collapse button */}
       {!isMobileDrawer && (
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute right-2 bottom-3 z-20 w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          className="absolute right-2 bottom-3 z-20 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           title={isCollapsed ? "Ouvrir le panneau" : "Réduire le panneau"}
           aria-label={isCollapsed ? "Ouvrir la barre latérale" : "Réduire la barre latérale"}
         >
           {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
         </button>
       )}
-
+      
       <div className={`flex flex-col gap-6 p-4 overflow-hidden ${isCollapsed ? "items-center" : ""}`}>
+        {/* Theme Toggle */}
+        {!isCollapsed && (
+          <div className="w-full flex justify-center">
+            <ThemeToggle />
+          </div>
+        )}
 
         {/* ── Section : Clé API ───────────────────── */}
         <div>
           {!isCollapsed && (
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold mb-2">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">
               Clé API Gemini
             </p>
           )}
@@ -128,7 +135,7 @@ export function AppSidebar({
               <button
                 onClick={onLogout}
                 title="Retirer la clé API"
-                className="p-2 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-500 hover:text-red-400 hover:border-red-800/50 hover:bg-red-950/20 transition-all cursor-pointer flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="p-2 rounded-xl border border-border bg-muted/50 text-muted-foreground hover:text-red-400 hover:border-red-500/50 hover:bg-red-500/10 transition-all cursor-pointer flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 aria-label="Retirer la clé API Gemini de l'application"
               >
                 <LogOut size={12} />
@@ -151,14 +158,14 @@ export function AppSidebar({
         <div className="flex-1 min-h-0">
           {!isCollapsed && (
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                 Historique récent
               </p>
               {history.length > 0 && (
                 <button
                   onClick={() => setClearConfirmOpen(true)}
                   title="Effacer l'historique"
-                  className="text-slate-600 hover:text-red-400 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-0.5"
+                  className="text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-0.5"
                   aria-label="Effacer tout l'historique"
                 >
                   <Trash2 size={11} />
@@ -171,7 +178,7 @@ export function AppSidebar({
             <button
               onClick={() => setCollapsed(false)}
               title={`${history.length} requête(s) dans l'historique`}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white transition-all relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/50 border border-border/50 text-muted-foreground hover:text-foreground transition-all relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label={`Ouvrir la barre latérale pour voir l'historique de ${history.length} requêtes`}
             >
               <History size={14} />
@@ -182,7 +189,7 @@ export function AppSidebar({
               )}
             </button>
           ) : history.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-6 text-slate-600">
+            <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
               <History size={20} />
               <p className="text-xs text-center leading-relaxed">
                 Vos requêtes récentes<br />apparaîtront ici.
@@ -195,20 +202,20 @@ export function AppSidebar({
                   <button
                     type="button"
                     onClick={() => onRestoreHistory(item)}
-                    className="text-left w-full px-3 py-2.5 rounded-xl bg-slate-800/40 hover:bg-primary/10 border border-slate-800 hover:border-primary/30 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                    className="text-left w-full px-3 py-2.5 rounded-xl bg-muted/40 hover:bg-primary/10 border border-muted hover:border-primary/30 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     title={item.prompt}
                     aria-label={`Restaurer la requête historique : ${item.prompt}`}
                   >
-                    <p className="text-xs text-slate-300 group-hover:text-primary truncate transition-colors font-medium leading-tight pr-4">
+                    <p className="text-xs text-muted-foreground group-hover:text-primary truncate transition-colors font-medium leading-tight pr-4">
                       {item.prompt}
                     </p>
-                    <p className="text-[10px] text-slate-600 mt-0.5 truncate pr-4">
+                    <p className="text-[10px] text-muted-foreground/60 mt-0.5 truncate pr-4">
                       {item.response.replace(/[#*`]/g, "").substring(0, 50)}…
                     </p>
                   </button>
                   <button
                     onClick={() => handleDeleteItem(item.id)}
-                    className="absolute top-1.5 right-1.5 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-0.5 rounded text-slate-400 hover:text-red-400 hover:bg-red-950/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="absolute top-1.5 right-1.5 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-0.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     title="Supprimer cette requête"
                     aria-label={`Supprimer la requête : ${item.prompt}`}
                   >
@@ -268,7 +275,7 @@ export function AppSidebar({
         )}
 
         {/* ── Section : Support ───────────────────── */}
-        <div className="mt-auto pt-4 border-t border-slate-800/60 flex flex-col gap-2">
+        <div className="mt-auto pt-4 border-t border-border/60 flex flex-col gap-2">
           {isCollapsed ? (
             <a
               href={process.env.NEXT_PUBLIC_SUPPORT_URL || "https://buymeacoffee.com/"}
@@ -281,14 +288,14 @@ export function AppSidebar({
               <Coffee size={14} className="animate-pulse" />
             </a>
           ) : (
-            <div className="bg-gradient-to-br from-yellow-950/20 to-slate-900 border border-yellow-800/20 p-3.5 rounded-2xl flex flex-col gap-2 shadow-[0_0_20px_-6px_rgba(250,204,21,0.1)] relative overflow-hidden group">
+            <div className="bg-gradient-to-br from-yellow-950/20 to-muted border border-yellow-800/20 p-3.5 rounded-2xl flex flex-col gap-2 shadow-[0_0_20px_-6px_rgba(250,204,21,0.1)] relative overflow-hidden group">
               <div className="absolute -right-6 -bottom-6 w-16 h-16 bg-yellow-500/10 rounded-full blur-xl group-hover:bg-yellow-500/20 transition-all duration-300" />
 
               <div className="flex items-center gap-2 text-yellow-400 font-semibold text-xs tracking-tight">
                 <Coffee size={14} className="group-hover:rotate-12 transition-transform duration-300" />
                 <span>Soutenir le projet</span>
               </div>
-              <p className="text-[10px] text-slate-400 leading-normal">
+              <p className="text-[10px] text-muted-foreground leading-normal">
                 Excel-Formule AI est gratuit et sans serveurs. Offrez-moi un café pour soutenir le projet !
               </p>
               <a
@@ -304,12 +311,17 @@ export function AppSidebar({
           <Link
             href="/about"
             title="À propos & FAQ"
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:text-slate-300 hover:bg-slate-800/30 border border-transparent hover:border-slate-800/30 transition-all text-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isCollapsed ? "justify-center" : ""}`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/30 border border-transparent hover:border-border/30 transition-all text-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isCollapsed ? "justify-center" : ""}`}
             aria-label="En savoir plus à propos de l'application et de la confidentialité"
           >
             <HelpCircle size={13} />
             {!isCollapsed && "À propos & FAQ"}
           </Link>
+          {!isMobileDrawer && !isCollapsed && (
+            <div className="pt-4 border-t border-border/60">
+              <ThemeToggle />
+            </div>
+          )}
         </div>
       </div>
       {/* ── Modal de confirmation ────────────────── */}

@@ -3,6 +3,7 @@ import { DM_Sans, Calistoga } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/react";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans" });
 const calistoga = Calistoga({ weight: "400", subsets: ["latin"], variable: "--font-display" });
@@ -39,12 +40,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`dark ${dmSans.variable} ${calistoga.variable}`} suppressHydrationWarning>
-      <body className="min-h-screen bg-background text-foreground antialiased font-sans" suppressHydrationWarning>
-        {children}
-        <Toaster />
-        <Analytics />
-      </body>
-    </html>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <html lang="fr" className={`${dmSans.variable} ${calistoga.variable}`} suppressHydrationWarning>
+        <body className="min-h-screen bg-background text-foreground antialiased font-sans" suppressHydrationWarning>
+          {children}
+          <Toaster />
+          <Analytics />
+        </body>
+      </html>
+    </ThemeProvider>
   );
 }

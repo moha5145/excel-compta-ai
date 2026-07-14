@@ -43,26 +43,27 @@
 }
 
 :root {
-  --background: #0F172A; /* Trust Navy */
-  --foreground: #F8FAFC; /* Slate Text */
-  --card: rgba(30, 41, 59, 0.7); /* Translucent Slate-800 for Glass effect */
-  --card-foreground: #F8FAFC;
-  --popover: #0F172A;
-  --popover-foreground: #F8FAFC;
+  /* Light mode (default) */
+  --background: #F8FAFC; /* Slate-50 */
+  --foreground: #0F172A; /* Slate-950 */
+  --card: #FFFFFF; /* White */
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
   --primary: #A16207; /* Premium Gold */
   --primary-foreground: #FFFFFF;
-  --secondary: #1E293B;
-  --secondary-foreground: #F8FAFC;
-  --muted: #1E293B;
-  --muted-foreground: #94A3B8;
+  --secondary: #F1F5F9; /* Slate-100 */
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B; /* Slate-500 */
   --accent: #A16207;
   --accent-foreground: #FFFFFF;
   --destructive: #DC2626;
-  --destructive-foreground: #F8FAFC;
-  --border: #334155;
-  --input: #1E293B;
+  --destructive-foreground: #FFFFFF;
+  --border: #E2E8F0; /* Slate-200 */
+  --input: #E2E8F0;
   --ring: #A16207;
-  --radius: 0.75rem; /* adoucir légèrement les angles */
+  --radius: 0.75rem;
 }
 
 .dark {
