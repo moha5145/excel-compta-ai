@@ -13,7 +13,7 @@
   <a href="https://excel-formule-ai.vercel.app"><strong>🚀 Essayer la démo</strong></a> · 
   <a href="#-installation">📦 Installation</a> · 
   <a href="#-contribuer">🤝 Contribuer</a> · 
-  <a href="https://github.com/your-repo/excel-formule-ai/issues">🐛 Un bug ?</a>
+  <a href="https://github.com/moha5145/excel-formule-ai/issues">🐛 Un bug ?</a>
 </p>
 
 <p align="center">
@@ -107,7 +107,7 @@ Parce que personne n'aime googler *"formule INDEX MATCH Excel FR"* à 23h. Ici, 
 ### En 3 commandes
 
 ```bash
-git clone https://github.com/your-repo/excel-formule-ai.git
+git clone https://github.com/moha5145/excel-formule-ai.git
 cd excel-formule-ai
 npm install
 ```
