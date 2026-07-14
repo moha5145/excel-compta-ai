@@ -102,33 +102,27 @@ export function AppSidebar({
       {!isMobileDrawer && (
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute right-2 bottom-3 z-20 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="absolute right-1.5 bottom-2.5 z-20 w-5 h-5 rounded-full bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shadow-md cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           title={isCollapsed ? "Ouvrir le panneau" : "Réduire le panneau"}
           aria-label={isCollapsed ? "Ouvrir la barre latérale" : "Réduire la barre latérale"}
         >
-          {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+          {isCollapsed ? <ChevronRight size={10} /> : <ChevronLeft size={10} />}
         </button>
       )}
       
-      <div className={`flex flex-col gap-6 p-4 overflow-hidden ${isCollapsed ? "items-center" : ""}`}>
+      <div className={`flex flex-col gap-5 p-3.5 overflow-hidden ${isCollapsed ? "items-center" : ""}`}>
         {/* Theme Toggle - bottom next to collapse button */}
         {!isMobileDrawer && (
-          <div className="absolute bottom-3 right-14 left-4 flex justify-end w-auto">
-            <ThemeToggle />
+          <div className={`absolute flex justify-center w-auto ${isCollapsed ? "left-1/2 -translate-x-1/2 bottom-14" : "left-3.5 right-7 bottom-2.5"}`}>
+            <ThemeToggle vertical={isCollapsed} />
           </div>
         )}
 
         {/* ── Section : Clé API ───────────────────── */}
         <div>
-          {!isCollapsed && (
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">
-              Clé API Gemini
-            </p>
-          )}
-
           {apiKey && mounted ? (
             <div className={`flex ${isCollapsed ? "flex-col gap-2" : "gap-2"} items-center`}>
-              <div className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-green-950/30 border border-green-800/40 text-green-400 text-xs ${isCollapsed ? "justify-center" : ""}`}>
+              <div className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 dark:bg-green-950/30 dark:border-green-800/40 text-xs ${isCollapsed ? "justify-center" : ""}`}>
                 <Key size={12} />
                 {!isCollapsed && <span className="truncate">Clé active</span>}
               </div>
@@ -158,17 +152,17 @@ export function AppSidebar({
         <div className="flex-1 min-h-0">
           {!isCollapsed && (
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                Historique récent
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-semibold">
+                Historique
               </p>
               {history.length > 0 && (
                 <button
                   onClick={() => setClearConfirmOpen(true)}
                   title="Effacer l'historique"
-                  className="text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-0.5"
+                  className="text-muted-foreground/50 hover:text-destructive transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-0.5"
                   aria-label="Effacer tout l'historique"
                 >
-                  <Trash2 size={11} />
+                  <Trash2 size={10} />
                 </button>
               )}
             </div>
@@ -178,48 +172,48 @@ export function AppSidebar({
             <button
               onClick={() => setCollapsed(false)}
               title={`${history.length} requête(s) dans l'historique`}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/50 border border-border/50 text-muted-foreground hover:text-foreground transition-all relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-muted/50 border border-border/50 text-muted-foreground hover:text-foreground transition-all relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label={`Ouvrir la barre latérale pour voir l'historique de ${history.length} requêtes`}
             >
-              <History size={14} />
+              <History size={13} />
               {history.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full text-[9px] text-white flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full text-[8px] text-white flex items-center justify-center font-bold">
                   {history.length}
                 </span>
               )}
             </button>
           ) : history.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
-              <History size={20} />
-              <p className="text-xs text-center leading-relaxed">
-                Vos requêtes récentes<br />apparaîtront ici.
+            <div className="flex flex-col items-center gap-2 py-5 text-muted-foreground/50">
+              <History size={18} />
+              <p className="text-[10px] text-center leading-relaxed">
+                Aucune requête récente.
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[420px] pr-0.5">
+            <div className="flex flex-col gap-1 overflow-y-auto max-h-[380px] pr-0.5">
               {history.map((item) => (
                 <div key={item.id} className="group relative">
                   <button
                     type="button"
                     onClick={() => onRestoreHistory(item)}
-                    className="text-left w-full px-3 py-2.5 rounded-xl bg-muted/40 hover:bg-primary/10 border border-muted hover:border-primary/30 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="text-left w-full px-2.5 py-2 rounded-xl bg-muted/30 hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     title={item.prompt}
                     aria-label={`Restaurer la requête historique : ${item.prompt}`}
                   >
-                    <p className="text-xs text-muted-foreground group-hover:text-primary truncate transition-colors font-medium leading-tight pr-4">
+                    <p className="text-[11px] text-muted-foreground group-hover:text-primary truncate transition-colors font-medium leading-tight pr-3">
                       {item.prompt}
                     </p>
-                    <p className="text-[10px] text-muted-foreground/60 mt-0.5 truncate pr-4">
-                      {item.response.replace(/[#*`]/g, "").substring(0, 50)}…
+                    <p className="text-[9px] text-muted-foreground/50 mt-0.5 truncate pr-3">
+                      {item.response.replace(/[#*`]/g, "").substring(0, 45)}…
                     </p>
                   </button>
                   <button
                     onClick={() => handleDeleteItem(item.id)}
-                    className="absolute top-1.5 right-1.5 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-0.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     title="Supprimer cette requête"
                     aria-label={`Supprimer la requête : ${item.prompt}`}
                   >
-                    <X size={10} />
+                    <X size={9} />
                   </button>
                 </div>
               ))}
@@ -229,42 +223,35 @@ export function AppSidebar({
 
         {/* ── Section : Plan gratuit ────────────── */}
         {!apiKey && dailyFreeRemaining !== null && dailyFreeRemaining !== undefined && (
-          <div className="pt-4 border-t border-slate-800/60">
+          <div className="pt-3 border-t border-border/40">
             {isCollapsed ? (
               <button
                 onClick={onOpenKeyModal}
                 title="Plan gratuit"
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-green-950/30 border border-green-800/40 text-green-400 hover:bg-green-950/50 hover:border-green-700/60 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-green-500/10 dark:bg-green-950/30 border border-green-500/30 dark:border-green-800/40 text-green-600 dark:text-green-400 hover:bg-green-500/20 dark:hover:bg-green-950/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 aria-label="Voir le plan gratuit"
               >
-                <Gift size={14} />
+                <Gift size={13} />
               </button>
             ) : (
-              <div className="bg-gradient-to-br from-green-950/20 to-slate-900 border border-green-800/20 p-3.5 rounded-2xl flex flex-col gap-2.5 shadow-[0_0_20px_-6px_rgba(34,197,94,0.1)] relative overflow-hidden group">
-                <div className="absolute -right-6 -bottom-6 w-16 h-16 bg-green-500/10 rounded-full blur-xl group-hover:bg-green-500/20 transition-all duration-300" />
-
-                <div className="flex items-center gap-2 text-green-400 font-semibold text-xs tracking-tight">
-                  <Gift size={14} className="group-hover:rotate-12 transition-transform duration-300" />
+              <div className="bg-gradient-to-br from-green-50 to-card dark:from-green-950/20 dark:to-slate-900 border border-green-200 dark:border-green-800/20 p-3 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+                <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-semibold text-[11px] tracking-tight">
+                  <Gift size={12} />
                   <span>Plan gratuit</span>
                 </div>
-                <p className="text-[10px] text-slate-400 leading-normal">
-                  {dailyFreeRemaining > 0
-                    ? "Réinitialisation quotidienne"
-                    : "Limite atteinte aujourd'hui"}
-                </p>
-                <div className="w-full bg-slate-800/50 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-green-progress-bg rounded-full h-1.5 overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-500"
                     style={{ width: `${((3 - dailyFreeRemaining) / 3) * 100}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-500">
-                    <span className="text-green-400 font-semibold">{dailyFreeRemaining}</span> / 3 messages
+                  <span className="text-[10px] text-muted-foreground">
+                    <span className="text-green-600 dark:text-green-400 font-semibold">{dailyFreeRemaining}</span>/3 messages
                   </span>
                   <button
                     onClick={onOpenKeyModal}
-                    className="text-[10px] text-primary hover:text-yellow-300 font-medium transition-colors cursor-pointer"
+                    className="text-[10px] text-primary hover:text-yellow-600 dark:hover:text-yellow-300 font-medium transition-colors cursor-pointer"
                   >
                     Débloquer plus →
                   </button>
@@ -275,34 +262,29 @@ export function AppSidebar({
         )}
 
         {/* ── Section : Support ───────────────────── */}
-        <div className="mt-auto pt-4 border-t border-border/60 flex flex-col gap-2">
+        <div className="mt-auto pt-3 border-t border-border/40 flex flex-col gap-2">
           {isCollapsed ? (
             <a
               href={process.env.NEXT_PUBLIC_SUPPORT_URL || "https://buymeacoffee.com/"}
               target="_blank"
               rel="noreferrer"
               title="Soutenir le projet"
-              className="flex items-center justify-center w-10 h-10 rounded-xl text-yellow-400 bg-yellow-950/30 border border-yellow-700/40 hover:bg-yellow-950/50 hover:border-yellow-600/60 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex items-center justify-center w-9 h-9 rounded-xl text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 dark:bg-yellow-950/30 border border-yellow-300 dark:border-yellow-700/40 hover:bg-yellow-500/20 dark:hover:bg-yellow-950/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Faire un don de soutien Buy Me A Coffee"
             >
-              <Coffee size={14} className="animate-pulse" />
+              <Coffee size={13} />
             </a>
           ) : (
-            <div className="bg-gradient-to-br from-yellow-950/20 to-muted border border-yellow-800/20 p-3.5 rounded-2xl flex flex-col gap-2 shadow-[0_0_20px_-6px_rgba(250,204,21,0.1)] relative overflow-hidden group">
-              <div className="absolute -right-6 -bottom-6 w-16 h-16 bg-yellow-500/10 rounded-full blur-xl group-hover:bg-yellow-500/20 transition-all duration-300" />
-
-              <div className="flex items-center gap-2 text-yellow-400 font-semibold text-xs tracking-tight">
-                <Coffee size={14} className="group-hover:rotate-12 transition-transform duration-300" />
+            <div className="bg-gradient-to-br from-yellow-50 to-card dark:from-yellow-950/20 dark:to-muted border border-yellow-200 dark:border-yellow-800/20 p-3 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+              <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400 font-semibold text-[11px] tracking-tight">
+                <Coffee size={12} />
                 <span>Soutenir le projet</span>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-normal">
-                Excel-Formule AI est gratuit et sans serveurs. Offrez-moi un café pour soutenir le projet !
-              </p>
               <a
                 href={process.env.NEXT_PUBLIC_SUPPORT_URL || "https://buymeacoffee.com/"}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full text-center py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02]"
+                className="w-full text-center py-1.5 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white text-[10px] font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-[1.02]"
               >
                 ☕ Offrir un café
               </a>
@@ -311,16 +293,12 @@ export function AppSidebar({
           <Link
             href="/about"
             title="À propos & FAQ"
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/30 border border-transparent hover:border-border/30 transition-all text-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isCollapsed ? "justify-center" : ""}`}
+            className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-muted-foreground/60 hover:text-foreground hover:bg-muted/30 transition-all text-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isCollapsed ? "justify-center" : ""}`}
             aria-label="En savoir plus à propos de l'application et de la confidentialité"
           >
-            <HelpCircle size={13} />
+            <HelpCircle size={12} />
             {!isCollapsed && "À propos & FAQ"}
           </Link>
-          {!isMobileDrawer && !isCollapsed && (
-            <div className="pt-4 border-t border-border/60">
-            </div>
-          )}
         </div>
       </div>
       {/* ── Modal de confirmation ────────────────── */}

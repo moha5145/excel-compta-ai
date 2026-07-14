@@ -3,11 +3,11 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function ThemeToggle() {
+export function ThemeToggle({ vertical = false }: { vertical?: boolean }) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="flex items-center gap-0.5 bg-muted/50 border border-border p-0.5 rounded-lg">
+    <div className={`flex items-center gap-0.5 bg-muted/50 border border-border p-0.5 rounded-lg ${vertical ? "flex-col" : ""}`}>
       <Button
         variant={theme === "light" ? "default" : "ghost"}
         size="icon"

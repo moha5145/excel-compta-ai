@@ -182,7 +182,7 @@ export function FormulaInputBar({
                   variant="ghost"
                   size="sm"
                   onClick={onUndoEnhance}
-                  className="text-slate-400 hover:text-white text-[11px] h-8 px-2 hover:bg-slate-800/50 rounded-lg flex items-center gap-1 cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground text-[11px] h-8 px-2 hover:bg-muted rounded-lg flex items-center gap-1 cursor-pointer"
                   aria-label="Annuler l'amélioration du prompt"
                 >
                   <Undo2 className="w-3 h-3" /> Annuler
@@ -403,7 +403,7 @@ export function FormulaResultArea({
             <Button
               variant="outline"
               onClick={onCopy}
-              className="min-w-0 border-slate-700 bg-slate-800/50 hover:bg-slate-700 active:scale-95 text-white rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
+              className="min-w-0 border-border bg-btn-outline-bg hover:bg-btn-outline-hover active:scale-95 text-foreground rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
             >
               {copied ? (
                 <><Check size={14} className="text-green-500 mr-1 sm:mr-1.5 flex-shrink-0" /> Copié</>
@@ -414,7 +414,7 @@ export function FormulaResultArea({
             <Button
               variant="outline"
               onClick={onDownload}
-              className="min-w-0 border-slate-700 bg-slate-800/50 hover:bg-slate-700 active:scale-95 text-white rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
+              className="min-w-0 border-border bg-btn-outline-bg hover:bg-btn-outline-hover active:scale-95 text-foreground rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
               title="Télécharger la réponse (.txt)"
             >
               <Download size={14} className="mr-1 sm:mr-1.5 flex-shrink-0" /> Explication
@@ -422,10 +422,10 @@ export function FormulaResultArea({
             <Button
               variant="outline"
               onClick={onDownloadExcel}
-              className="min-w-0 border-emerald-900/50 bg-emerald-950/20 hover:bg-emerald-900/30 hover:border-emerald-700 active:scale-95 text-emerald-400 rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
+              className="min-w-0 border-green-300 dark:border-green-900/50 bg-green-50 dark:bg-emerald-950/20 hover:bg-green-100 dark:hover:bg-emerald-900/30 hover:border-green-400 dark:hover:border-emerald-700 active:scale-95 text-green-700 dark:text-emerald-400 rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
               title="Télécharger l'exemple Excel (.xlsx)"
             >
-              <FileSpreadsheet size={14} className="mr-1 sm:mr-1.5 text-emerald-500 flex-shrink-0" /> Excel
+              <FileSpreadsheet size={14} className="mr-1 sm:mr-1.5 text-green-600 dark:text-emerald-500 flex-shrink-0" /> Excel
             </Button>
           </div>
         </div>

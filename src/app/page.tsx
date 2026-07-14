@@ -309,7 +309,7 @@ export default function Home() {
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-yellow-700 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary/20 flex-shrink-0">
                 ∑
               </div>
-              <h1 className="text-base sm:text-xl font-display text-white tracking-tight">
+              <h1 className="text-base sm:text-xl font-display text-foreground tracking-tight">
                 Excel-Formule <span className="text-primary font-sans font-medium">AI</span>
               </h1>
             </div>
@@ -355,13 +355,13 @@ export default function Home() {
               <div className="w-full flex flex-col items-center">
                 {/* Hero text */}
                 <div className="text-center mb-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
-                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-display text-white mb-2 sm:mb-3 tracking-tight leading-tight">
+                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-display text-foreground mb-2 sm:mb-3 tracking-tight leading-tight">
                     Générez des formules complexes{" "}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-yellow-500 font-sans font-extrabold font-display">
                       en un instant.
                     </span>
                   </h2>
-                  <p className="text-xs sm:text-sm md:text-base text-slate-400 max-w-xl mx-auto leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
                     Décrivez votre besoin en langage naturel. Notre IA rédige la formule exacte pour Excel et Google Sheets.
                   </p>
                 </div>
@@ -375,7 +375,7 @@ export default function Home() {
                     <div className={`max-w-[85%] px-4 py-3 rounded-2xl ${
                       msg.role === "user"
                         ? "bg-primary/20 border border-primary/30 text-foreground text-sm"
-                        : "bg-muted/80 border border-border/50 text-muted-foreground text-sm prose prose-invert prose-p:text-muted-foreground prose-a:text-primary hover:prose-a:text-yellow-400 prose-strong:text-foreground prose-li:text-muted-foreground max-w-none"
+                        : "bg-muted/80 border border-border/50 text-muted-foreground text-sm prose prose-p:text-muted-foreground prose-a:text-primary hover:prose-a:text-yellow-400 prose-strong:text-foreground prose-li:text-muted-foreground max-w-none"
                     }`}>
                       {msg.role === "model" ? (
                         <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
@@ -410,7 +410,7 @@ export default function Home() {
                 ))}
                 {loading && (
                   <div className="flex justify-start">
-                    <div className="bg-slate-800/80 border border-slate-700/50 text-slate-300 text-sm prose prose-invert max-w-none px-4 py-3 rounded-2xl animate-pulse">
+                    <div className="bg-loading-bg border border-loading-border text-loading-text text-sm prose max-w-none px-4 py-3 rounded-2xl animate-pulse">
                       Rédaction de la formule...
                     </div>
                   </div>
