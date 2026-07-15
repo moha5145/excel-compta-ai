@@ -66,7 +66,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [previousPrompt, setPreviousPrompt] = useState("");
   const [history, setHistory] = useLocalStorage<HistoryItem[]>("excel_compta_history", []);
 
@@ -115,13 +115,13 @@ export default function Home() {
   }, []);
 
   // Copy result
-  const handleCopy = useCallback((content: string) => {
+  const handleCopy = useCallback((content: string, idx: number) => {
     if (!content) return;
     const formulaMatch = content.match(/```(?:excel)?\n?([\s\S]*?)\n?```/);
     const textToCopy = formulaMatch ? formulaMatch[1].trim() : content;
     navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
     toast.success("Formule copiée dans le presse-papier !");
   }, []);
 
@@ -413,7 +413,7 @@ export default function Home() {
                     <div className={`max-w-[85%] px-4 py-3 rounded-2xl ${
                       msg.role === "user"
                         ? "bg-primary/20 border border-primary/30 text-foreground text-sm"
-                        : "bg-muted/80 border border-border/50 text-muted-foreground text-sm prose prose-p:text-muted-foreground prose-a:text-primary hover:prose-a:text-yellow-400 prose-strong:text-foreground prose-li:text-muted-foreground max-w-none"
+                        : "bg-muted/80 border border-border/50 text-sm prose dark:prose-invert prose-p:text-foreground/80 prose-a:text-primary hover:prose-a:text-yellow-400 prose-strong:text-foreground prose-li:text-foreground/80 max-w-none"
                     }`}>
                       {msg.role === "model" ? (
                         <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
@@ -448,8 +448,8 @@ export default function Home() {
                       <FormulaResultArea
                         response={msg.content}
                         loading={loading && idx === messages.length - 1}
-                        copied={copied}
-                        onCopy={() => handleCopy(msg.content)}
+                        copied={copiedIdx === idx}
+                        onCopy={() => handleCopy(msg.content, idx)}
                         onDownload={() => handleDownload(msg.content)}
                         onDownloadExcel={() => handleDownloadExcel(msg.content)}
                         onRegenerate={handleGenerate}

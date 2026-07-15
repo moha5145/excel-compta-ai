@@ -1,10 +1,26 @@
 "use client";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function ThemeToggle({ vertical = false }: { vertical?: boolean }) {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className={`flex items-center gap-0.5 bg-muted/50 border border-border p-0.5 rounded-lg ${vertical ? "flex-col" : ""}`}>
+        <div className="h-8 w-8 rounded-md" />
+        <div className="h-8 w-8 rounded-md" />
+        <div className="h-8 w-8 rounded-md" />
+      </div>
+    );
+  }
 
   return (
     <div className={`flex items-center gap-0.5 bg-muted/50 border border-border p-0.5 rounded-lg ${vertical ? "flex-col" : ""}`}>

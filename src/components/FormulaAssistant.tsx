@@ -1,11 +1,8 @@
 "use client";
-import { useRef, useEffect, useState, useCallback, type ReactNode } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Copy, Check, Sparkles, Wand2, Undo2, Zap, Brain, Key, Download, FileSpreadsheet, FileType, RefreshCw } from "lucide-react";
+import { Loader2, Copy, Check, Wand2, Undo2, Zap, Brain, Key, Download, FileSpreadsheet, FileType, RefreshCw } from "lucide-react";
 import type { ExportFormat } from "@/lib/excelExport";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export const FORMULA_EXAMPLES = [
   { label: "Sélectionnez un exemple rapide...", keywords: "" },
@@ -30,35 +27,6 @@ export const FORMULA_EXAMPLES = [
   { label: "Calculer la VNC après 3 ans d'amortissement", keywords: "vnc" },
   { label: "Répartir un budget annuel au prorata des jours du mois", keywords: "prorata" },
 ];
-
-function normalizeMarkdownBlocks(markdown: string) {
-  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
-  const output: string[] = [];
-
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i];
-    const isFence = /^\s*```/.test(line);
-
-    if (isFence) {
-      const previousLine = output[output.length - 1];
-      if (previousLine !== undefined && previousLine.trim() !== "") {
-        output.push("");
-      }
-
-      output.push(line);
-
-      const nextLine = lines[i + 1];
-      if (nextLine !== undefined && nextLine.trim() !== "" && !/^\s*```/.test(nextLine)) {
-        output.push("");
-      }
-    } else {
-      output.push(line);
-    }
-  }
-
-  return output.join("\n");
-}
-
 
 interface FormulaInputBarProps {
   prompt: string;
@@ -305,13 +273,6 @@ export function FormulaResultArea({
   onRegenerate,
 }: FormulaResultAreaProps) {
   const resultRef = useRef<HTMLDivElement>(null);
-  const [formulaCopied, setFormulaCopied] = useState(false);
-
-  const handleCopyFormula = useCallback(async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setFormulaCopied(true);
-    setTimeout(() => setFormulaCopied(false), 2000);
-  }, []);
 
   // Auto scroll to results when loaded or updated
   useEffect(() => {
@@ -321,115 +282,53 @@ export function FormulaResultArea({
   }, [response]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col gap-4 sm:gap-6 py-4 sm:py-6 md:py-10 animate-in fade-in duration-500">
-      {/* Skeleton Loading State */}
-      {loading && !response && (
-        <div className="bg-muted/60 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-border/80 p-5 sm:p-8 shadow-xl flex flex-col gap-3 sm:gap-4 animate-in fade-in duration-300">
-          <div className="flex items-center gap-2 mb-1">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground font-medium">Rédaction de la formule...</span>
-          </div>
-          <Skeleton className="h-4 w-3/4 bg-muted" />
-          <Skeleton className="h-4 w-full bg-muted" />
-          <Skeleton className="h-24 w-full bg-muted/50 rounded-xl" />
-          <Skeleton className="h-4 w-1/2 bg-muted" />
-        </div>
-      )}
+    <div ref={resultRef} className="w-full flex flex-col gap-3 animate-in fade-in duration-300">
+      <div className="flex items-start gap-2 sm:gap-3 p-3 bg-muted/40 rounded-xl border border-border/50">
+        <span className="text-yellow-500 text-sm flex-shrink-0">⚠️</span>
+        <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-relaxed">
+          <span className="text-foreground font-medium">Vérifiez avant d&apos;utiliser en production.</span>{" "}
+          Les formules générées par IA peuvent contenir des erreurs. Testez toujours sur un jeu de données réel avant de l&apos;intégrer à vos fichiers officiels.
+        </p>
+      </div>
 
-      {/* Résultat Gemini */}
-      {response && (
-        <div
-          ref={resultRef}
-          className="bg-card backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-primary/20 py-4 sm:py-6 md:py-8 px-2 sm:px-2.5 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-500"
+      <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-2 w-full">
+        <Button
+          variant="outline"
+          onClick={onRegenerate}
+          disabled={loading}
+          className="min-w-0 border-primary/30 bg-primary/5 hover:bg-primary/15 hover:border-primary/50 active:scale-95 text-primary rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
+          title="Régénérer avec le même prompt"
         >
-          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70" />
-
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <h3 className="text-primary font-semibold text-base sm:text-lg md:text-xl flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              Résultat &amp; Explication
-            </h3>
-          </div>
-
-          <div className="prose prose-invert prose-p:text-muted-foreground prose-a:text-primary hover:prose-a:text-yellow-400 prose-strong:text-foreground prose-li:text-muted-foreground max-w-none text-xs sm:text-sm md:text-base leading-relaxed">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                p: ({ children }: { children?: ReactNode }) => <>{children}</>,
-                pre({ children, className }: { children?: ReactNode; className?: string }) {
-                  return (
-                    <pre className={`relative p-3 sm:p-4 md:p-5 my-3 sm:my-5 overflow-x-auto bg-muted border border-border rounded-xl sm:rounded-2xl text-yellow-300 font-mono text-xs sm:text-sm md:text-base shadow-inner group ${className || ""}`}>
-                      <button
-                        onClick={() => handleCopyFormula(String(children))}
-                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-muted/80 border border-border/50 text-muted-foreground hover:text-yellow-300 hover:bg-muted transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        aria-label="Copier la formule"
-                      >
-                        {formulaCopied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                      </button>
-                      <code className={className}>{children}</code>
-                    </pre>
-                  );
-                },
-                code({ inline, className, children }: { inline?: boolean; className?: string; children?: ReactNode }) {
-                  if (inline) {
-                    return <code className={`bg-muted text-yellow-250 px-1.5 py-0.5 rounded-md text-xs font-mono ${className || ""}`}>{children}</code>;
-                  }
-                  return <code className={className}>{children}</code>;
-                },
-              }}
-            >
-              {normalizeMarkdownBlocks(response)}
-            </ReactMarkdown>
-          </div>
-
-          <div className="mt-4 sm:mt-6 flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/50">
-            <span className="text-yellow-500 text-sm sm:text-base flex-shrink-0">⚠️</span>
-            <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-relaxed">
-              <span className="text-foreground font-medium">Vérifiez avant d&apos;utiliser en production.</span>{" "}
-              Les formules générées par IA peuvent contenir des erreurs. Testez toujours sur un jeu de données réel avant de l&apos;intégrer à vos fichiers officiels.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-2 w-full mt-4 sm:mt-6">
-            <Button
-              variant="outline"
-              onClick={onRegenerate}
-              disabled={loading}
-              className="min-w-0 border-primary/30 bg-primary/5 hover:bg-primary/15 hover:border-primary/50 active:scale-95 text-primary rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
-              title="Régénérer avec le même prompt"
-            >
-              <RefreshCw size={14} className={`mr-1 sm:mr-1.5 flex-shrink-0 ${loading ? "animate-spin" : ""}`} /> Régénérer
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onCopy}
-              className="min-w-0 border-border bg-btn-outline-bg hover:bg-btn-outline-hover active:scale-95 text-foreground rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
-            >
-              {copied ? (
-                <><Check size={14} className="text-green-500 mr-1 sm:mr-1.5 flex-shrink-0" /> Copié</>
-              ) : (
-                <><Copy size={14} className="mr-1 sm:mr-1.5 flex-shrink-0" /> Copier</>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onDownload}
-              className="min-w-0 border-border bg-btn-outline-bg hover:bg-btn-outline-hover active:scale-95 text-foreground rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
-              title="Télécharger la réponse (.txt)"
-            >
-              <Download size={14} className="mr-1 sm:mr-1.5 flex-shrink-0" /> Explication
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onDownloadExcel}
-              className="min-w-0 border-green-300 dark:border-green-900/50 bg-green-50 dark:bg-emerald-950/20 hover:bg-green-100 dark:hover:bg-emerald-900/30 hover:border-green-400 dark:hover:border-emerald-700 active:scale-95 text-green-700 dark:text-emerald-400 rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
-              title="Télécharger l'exemple Excel (.xlsx)"
-            >
-              <FileSpreadsheet size={14} className="mr-1 sm:mr-1.5 text-green-600 dark:text-emerald-500 flex-shrink-0" /> Excel
-            </Button>
-          </div>
-        </div>
-      )}
+          <RefreshCw size={14} className={`mr-1 sm:mr-1.5 flex-shrink-0 ${loading ? "animate-spin" : ""}`} /> Régénérer
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onCopy}
+          className="min-w-0 border-border bg-btn-outline-bg hover:bg-btn-outline-hover active:scale-95 text-foreground rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
+        >
+          {copied ? (
+            <><Check size={14} className="text-green-500 mr-1 sm:mr-1.5 flex-shrink-0" /> Copié</>
+          ) : (
+            <><Copy size={14} className="mr-1 sm:mr-1.5 flex-shrink-0" /> Copier</>
+          )}
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onDownload}
+          className="min-w-0 border-border bg-btn-outline-bg hover:bg-btn-outline-hover active:scale-95 text-foreground rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
+          title="Télécharger la réponse (.txt)"
+        >
+          <Download size={14} className="mr-1 sm:mr-1.5 flex-shrink-0" /> Explication
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onDownloadExcel}
+          className="min-w-0 border-green-300 dark:border-green-900/50 bg-green-50 dark:bg-emerald-950/20 hover:bg-green-100 dark:hover:bg-emerald-900/30 hover:border-green-400 dark:hover:border-emerald-700 active:scale-95 text-green-700 dark:text-emerald-400 rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
+          title="Télécharger l'exemple Excel (.xlsx)"
+        >
+          <FileSpreadsheet size={14} className="mr-1 sm:mr-1.5 text-green-600 dark:text-emerald-500 flex-shrink-0" /> Excel
+        </Button>
+      </div>
     </div>
   );
 }

@@ -40,14 +40,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <html lang="fr" className={`${dmSans.variable} ${calistoga.variable}`} suppressHydrationWarning>
-        <body className="min-h-screen bg-background text-foreground antialiased font-sans" suppressHydrationWarning>
+    <html lang="fr" className={`${dmSans.variable} ${calistoga.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen bg-background text-foreground antialiased font-sans" suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
           <Toaster />
           <Analytics />
-        </body>
-      </html>
-    </ThemeProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }
