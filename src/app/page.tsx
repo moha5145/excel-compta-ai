@@ -430,7 +430,7 @@ export default function Home() {
                     </span>
                   </h2>
                   <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                    Décrivez votre besoin en langage naturel. Notre IA rédige la formule exacte pour Excel et Google Sheets.
+                    Décrivez votre besoin en langage naturel. Notre IA rédige la formule exacte pour Excel, Sheets et LibreOffice — à copier ou télécharger en .xlsx avec tableau d'exemple.
                   </p>
                 </div>
 

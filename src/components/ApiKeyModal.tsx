@@ -57,7 +57,7 @@ export function ApiKeyModal({ open, onOpenChange, onKeySaved }: { open: boolean,
           <div className="flex items-start gap-2.5 bg-green-950/20 border border-green-800/20 p-3 rounded-xl">
             <ShieldCheck size={16} className="text-green-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-slate-400 leading-normal">
-              <strong className="text-green-400 font-medium">100% Privé & Sécurisé :</strong> Votre clé est stockée uniquement dans votre navigateur (LocalStorage) pour signer vos requêtes en direct. Elle ne transite jamais par nos serveurs.
+              <strong className="text-green-400 font-medium">100% Privé & Sécurisé :</strong> Votre clé est stockée dans votre navigateur (LocalStorage) et transmise de manière sécurisée à notre serveur pour interroger Gemini. Elle n&apos;est jamais conservée dans une base de données.
             </p>
           </div>
         </div>

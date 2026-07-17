@@ -42,7 +42,7 @@ export default function AboutPage() {
             À propos &amp; Confidentialité
           </h2>
           <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-2xl">
-            Découvrez comment Excel-Formule AI simplifie vos calculs sur tableur tout en protégeant vos données.
+            Excel-Formule AI génère des formules Excel, Google Sheets et LibreOffice Calc à partir d&apos;une description en langage naturel via l&apos;IA Google Gemini.
           </p>
         </div>
 
@@ -52,9 +52,9 @@ export default function AboutPage() {
             <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
               <ShieldCheck size={20} />
             </div>
-            <h3 className="text-foreground font-semibold text-base">Clé API locale</h3>
+            <h3 className="text-foreground font-semibold text-base">Clé API sécurisée</h3>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              Votre clé API Gemini est stockée uniquement en local dans votre navigateur (LocalStorage). Elle n&apos;est jamais sauvegardée sur nos serveurs.
+              Votre clé API Gemini est conservée dans votre navigateur (LocalStorage). Elle est transmise de manière sécurisée à notre serveur pour interroger l&apos;API Google Gemini, mais n&apos;est jamais stockée dans une base de données.
             </p>
           </div>
 
@@ -88,9 +88,9 @@ export default function AboutPage() {
 
           <div className="space-y-6">
             <div className="border-b border-border/60 pb-6">
-              <h4 className="text-foreground font-medium text-base mb-2">Comment fonctionne le mode Démo gratuit ?</h4>
+              <h4 className="text-foreground font-medium text-base mb-2">Comment fonctionne le mode gratuit ?</h4>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Le mode Démo gratuit utilise une base de données locale intelligente pour reconnaître les requêtes les plus courantes (TVA, SOMME.SI, RECHERCHEX, etc.) sans nécessiter de clé API. Il permet de tester l&apos;ergonomie de l&apos;application immédiatement.
+                Sans clé personnelle, vous avez droit à <strong>3 requêtes gratuites par jour</strong> via la clé serveur partagée. Cela vous permet de tester l&apos;application avant de configurer votre propre clé API Google Gemini (gratuite aussi) pour une utilisation illimitée.
               </p>
             </div>
 
@@ -102,18 +102,26 @@ export default function AboutPage() {
             </div>
 
             <div className="border-b border-border/60 pb-6">
+              <h4 className="text-foreground font-medium text-base mb-2">Quelle est la différence entre les modèles Flash et Pro ?</h4>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                <strong>Gemini 3.5 Flash</strong> est optimisé pour être extrêmement rapide sur les formules simples. <strong>Gemini 3.1 Pro</strong> dispose d&apos;un raisonnement mathématique et logique supérieur, parfait pour les calculs imbriqués complexes. En cas de saturation, un modèle de repli est automatiquement utilisé.
+              </p>
+            </div>
+
+            <div className="border-b border-border/60 pb-6">
               <h4 className="text-foreground font-medium text-base mb-2">Mes données sont-elles partagées ?</h4>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Non. Les requêtes saisies pour générer des formules transitent de manière sécurisée et chiffrée vers l&apos;API officielle de Google Gemini. L&apos;application elle-même ne collecte aucune donnée personnelle.
+                Non. Les requêtes transitent par notre serveur (qui ne les stocke pas) vers l&apos;API officielle de Google Gemini via une connexion chiffrée. L&apos;application ne collecte aucune donnée personnelle et ne conserve aucun historique côté serveur.
               </p>
             </div>
 
             <div>
-              <h4 className="text-foreground font-medium text-base mb-2">Quelle est la différence entre les modèles Flash et Pro ?</h4>
+              <h4 className="text-foreground font-medium text-base mb-2">Puis-je télécharger le résultat en fichier Excel ?</h4>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                <strong>Gemini Flash</strong> est optimisé pour être extrêmement rapide sur les formules simples. <strong>Gemini Pro</strong> dispose d&apos;un raisonnement mathématique et logique supérieur, parfait pour les calculs imbriqués complexes, le débogage de macros VBA ou de scripts complexes.
+                Oui. Chaque formule générée peut être copiée en un clic, téléchargée en fichier <strong>.txt</strong> ou directement en <strong>.xlsx</strong> avec un tableau d&apos;exemple et la formule pré-inscrite — prêt à ouvrir dans Excel, Google Sheets ou LibreOffice Calc.
               </p>
             </div>
+
           </div>
         </section>
 
