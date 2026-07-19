@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
 import { FormulaInputBar, FormulaResultArea } from "@/components/FormulaAssistant";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Menu, Copy } from "lucide-react";
+import { FileUpload } from "@/components/FileUpload";
+import { Menu, Copy, FileSpreadsheet } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { ExportFormat } from "@/lib/excelExport";
 import { downloadFormulaAsExcel } from "@/lib/excelExport";
@@ -44,6 +45,7 @@ function normalizeMarkdownBlocks(markdown: string) {
 interface Message {
   role: "user" | "model";
   content: string;
+  fileName?: string;
 }
 
 interface HistoryItem {
@@ -70,6 +72,11 @@ export default function Home() {
   const [previousPrompt, setPreviousPrompt] = useState("");
   const [history, setHistory] = useLocalStorage<HistoryItem[]>("excel_compta_history", []);
   const [currentConversationId, setCurrentConversationId] = useLocalStorage<string | null>("excel_compta_current_conv_id", null);
+  const [fileContext, setFileContext] = useState<{
+    fileName: string;
+    textRepresentation: string;
+  } | null>(null);
+  const [fileUploadKey, setFileUploadKey] = useState(0);
 
   const checkCoffeeToast = useCallback((currentCount: number) => {
     if (currentCount === 3 || currentCount === 8 || (currentCount > 8 && (currentCount - 8) % 8 === 0)) {
@@ -122,6 +129,7 @@ export default function Home() {
     setPrompt("");
     setCopiedIdx(null);
     setCurrentConversationId(null);
+    setFileContext(null);
   }, [setCurrentConversationId]);
 
   // Copy result
@@ -223,14 +231,18 @@ export default function Home() {
     setLoading(true);
 
     // Add user message to conversation immediately
-    const newUserMessage = { role: "user" as const, content: prompt };
+    const newUserMessage = { role: "user" as const, content: prompt, ...(fileContext ? { fileName: fileContext.fileName } : {}) };
     setMessages((prev) => [...prev, newUserMessage]);
 
     // Clear input after sending
     setPrompt("");
 
     // Build messages to send (current messages + new user message)
-    const messagesToSend = [...messages, newUserMessage];
+    let finalContent = prompt;
+    if (fileContext) {
+      finalContent += `\n\n[Données du fichier importé : "${fileContext.fileName}"]\n\`\`\`\n${fileContext.textRepresentation}\n\`\`\``;
+    }
+    const messagesToSend = [...messages, { role: "user" as const, content: finalContent }];
 
     try {
 
@@ -305,8 +317,10 @@ export default function Home() {
       toast.error(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setLoading(false);
+      setFileContext(null);
+      setFileUploadKey((k) => k + 1);
     }
-  }, [prompt, apiKey, modelChoice, dailyFreeRemaining, loading, setHistory, messages, currentConversationId, setCurrentConversationId]);
+  }, [prompt, apiKey, modelChoice, dailyFreeRemaining, loading, setHistory, messages, currentConversationId, setCurrentConversationId, fileContext]);
 
   // Keyboard Shortcuts (Ctrl+Enter / Cmd+Enter to generate, Ctrl+Shift+E / Cmd+Shift+E to enhance)
   useEffect(() => {
@@ -471,7 +485,15 @@ export default function Home() {
                           {normalizeMarkdownBlocks(msg.content)}
                         </ReactMarkdown>
                       ) : (
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        <div className="flex flex-col gap-1.5">
+                          {msg.fileName && (
+                            <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                              <FileSpreadsheet className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">{msg.fileName}</span>
+                            </div>
+                          )}
+                          <p className="whitespace-pre-wrap">{msg.content}</p>
+                        </div>
                       )}
                     </div>
                     {msg.role === "model" && (
@@ -497,6 +519,15 @@ export default function Home() {
               </div>
             )}
           </div>
+        </div>
+        
+        {/* File upload area */}
+        <div className="px-3 pb-2 sm:px-6 max-w-4xl w-full mx-auto flex-shrink-0 z-40">
+          <FileUpload
+            key={fileUploadKey}
+            onFileParsed={setFileContext}
+            disabled={loading}
+          />
         </div>
 
         {/* Fixed bottom input bar */}
