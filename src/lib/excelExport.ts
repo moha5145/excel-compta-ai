@@ -1,6 +1,8 @@
 import ExcelJS from "exceljs";
 import JSZip from "jszip";
 import { type ExportFormat, postProcessFormula, convertToUsInvariant } from "./excelExport/postProcessFormula";
+import { isComplexResponse, extractTableSchema, validateSchema, SchemaValidationError } from "./excelExport/schemaParser";
+import { buildComplexWorkbook } from "./excelExport/complexExcelBuilder";
 export type { ExportFormat };
 
 // Nettoie la syntaxe Markdown pour l'affichage brut en cellule Excel
@@ -36,8 +38,8 @@ function extractSimulationParams(
 ): { params: SimParam[]; columns: SimColumn[]; formulaRaw: string; resultLabel: string } {
   const params: SimParam[] = [];
   const columns: SimColumn[] = [];
-  let formulaRaw = "";
-  let resultLabel = "Résultat";
+  const formulaRaw = "";
+  const resultLabel = "Résultat";
 
   // Headers = première ligne du tableau (header row), en excluant "Ligne"
   const headers = table.headers.slice(1);
@@ -272,6 +274,34 @@ export async function downloadFormulaAsExcel(
   prompt: string,
   format: ExportFormat = "libreoffice-fr"
 ): Promise<void> {
+  if (isComplexResponse(response)) {
+    const rawSchema = extractTableSchema(response);
+    if (rawSchema === null) {
+      console.warn("TABLE_SCHEMA détecté mais JSON illisible, fallback mode simple");
+    } else {
+      try {
+        const schema = validateSchema(rawSchema);
+        const workbook = new ExcelJS.Workbook();
+        const { workbook: built, warnings } = buildComplexWorkbook(workbook, schema, response, prompt, format);
+        if (warnings.length > 0) {
+          console.warn("Complex export warnings:", warnings);
+        }
+        const blob = await patchWorkbookForceCalc(built);
+        triggerFileDownload(blob, prompt);
+        return;
+      } catch (e) {
+        if (e instanceof SchemaValidationError) {
+          console.error("Schema validation failed:", e.issues);
+          throw new Error(
+            "Schéma de tableau complexe invalide. Erreurs : " +
+            e.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
+          );
+        }
+        throw e;
+      }
+    }
+  }
+
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Excel-Formule AI";
   workbook.created = new Date();
@@ -655,18 +685,20 @@ export async function downloadFormulaAsExcel(
   // ─────────────────────────────────────────────────────────────
   // GÉNÉRATION + PATCH XML (ca="1" pour forcer recalcul)
   // ─────────────────────────────────────────────────────────────
+  const blob = await patchWorkbookForceCalc(workbook);
+  triggerFileDownload(blob, prompt);
+}
+
+export async function patchWorkbookForceCalc(workbook: ExcelJS.Workbook): Promise<Blob> {
   const rawBuffer = await workbook.xlsx.writeBuffer();
   const zip = await JSZip.loadAsync(rawBuffer);
 
-  // Patch : ajouter ca="1" sur chaque <f> pour forcer LibreOffice à réinterpréter
   for (const filename of Object.keys(zip.files)) {
     if (filename.startsWith("xl/worksheets/sheet") && filename.endsWith(".xml")) {
       let xml = await zip.file(filename)!.async("string");
-      // <f>content</f> → <f ca="1">content</f>
       xml = xml.replace(/<f>([^<]*)<\/f>/g, '<f ca="1">$1</f>');
-      // <f t="shared" si="0"> → <f ca="1" t="shared" si="0"> (skip si ca existe déjà)
       xml = xml.replace(/<f ([^>]*?)>/g, (match, attrs: string) => {
-        if (/\bca\s*=/.test(attrs)) return match; // déjà présent
+        if (/\bca\s*=/.test(attrs)) return match;
         return `<f ca="1" ${attrs}>`;
       });
       zip.file(filename, xml);
@@ -674,10 +706,12 @@ export async function downloadFormulaAsExcel(
   }
 
   const patchedBuffer = await zip.generateAsync({ type: "nodebuffer" });
-  const blob = new Blob([patchedBuffer as unknown as ArrayBuffer], {
+  return new Blob([patchedBuffer as unknown as ArrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
+}
 
+export function triggerFileDownload(blob: Blob, prompt: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

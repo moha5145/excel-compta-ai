@@ -94,6 +94,147 @@ export async function POST(req: NextRequest) {
 
 ${formatInstruction}
 
+MODE COMPLEXE — TABLEAUX MULTI-FORMULES (général, tout domaine) :
+GÉNÉRAL : Quand la demande de l'utilisateur nécessite un tableau avec >= 2 colonnes CALCULÉES 
+(chacune avec sa propre formule, potentiellement dépendantes entre elles), tu DOIS :
+  1. Fournir ton explication Markdown et ton tableau Markdown normal (visible dans le chat).
+  2. AJOUTER à la toute fin de ta réponse un commentaire HTML invisible contenant un schéma JSON :
+     <!-- TABLE_SCHEMA: { ... } -->
+  3. Le JSON doit suivre EXACTEMENT cette structure (n'omets aucun champ obligatoire) :
+     {
+       "type": "complex_table",
+       "title": "Titre descriptif du tableau",
+       "parameters": [
+         { "name": "Nom paramètre", "ref": "C5", "value": 500000, "type": "currency", "unit": "€" }
+       ],
+       "columns": [
+         { "header": "Nom Colonne", "type": "currency", "formula": "=...", "formula_en": "=...", "description": "Description" }
+       ],
+       "data_start_row": 10,
+       "sample_rows": 3
+     }
+
+⚠️ RÈGLE LA PLUS IMPORTANTE — COHÉRENCE parameters ↔ colonnes input :
+Pour chaque colonne dans "columns", tu DOIS choisir UN de ces deux rôles :
+  • RÔLE A — Colonne INPUT (saisie par ligne) : "formula": null ET "formula_en": null.
+    La cellule sera vide/en jaune dans le tableau, modifiable par l'utilisateur pour chaque ligne.
+    Exemple typique : "Coût d'acquisition", "Durée (ans)", "Années écoulées", "Quantité", "Prix unitaire".
+  • RÔLE B — Colonne CALCULÉE : "formula" et "formula_en" non-null, contenant une formule avec {row}.
+
+ALGORITHME OBLIGATOIRE pour déterminer "parameters" :
+  ÉTAPE 1. Liste toutes les colonnes_input = colonnes où "formula": null.
+  ÉTAPE 2. Si AU MOINS UNE colonne existe en input, tu DOIS remplir "parameters" :
+    - Cas 2a. S'il y a des variables GLOBALES partagées par tout le tableau (taux d'intérêt unique, 
+      montant de prêt unique, etc.), fais une entrée "parameters" par variable globale,
+      avec une "ref" en zone haute (C5, C6, C7...).
+    - Cas 2b. S'il n'y a PAS de variable globale (chaque ligne a ses propres inputs, ex: VNC, 
+      facturation multi-lignes), tu DOIS AUSSI mettre au moins une entrée "parameters" pour 
+      passer la validation. Dans ce cas, mets par exemple :
+        "parameters": [
+          { "name": "Données d'exemple (voir tableau ci-dessous)", "ref": "C5", "value": 0, "type": "text" }
+        ]
+      OU mieux, expose en "parameters" une ou deux variables globales pertinentes pour l'utilisateur 
+      (ex: "Taux de TVA applicable", "Année de référence"). 
+      IL EST INTERDIT de laisser "parameters": [] SI tu as des colonnes input (formula: null).
+  ÉTAPE 3. Si tu n'as AUCUNE colonne input (uniquement des colonnes calculées à partir de parameters,
+    ex: tableau d'amortissement avec un seul prêt), alors "parameters": [...] est requis pour décrire
+    ces variables globales. Tu ne peux pas avoir un schéma avec "parameters": [] ET 0 colonnes input.
+
+EXEMPLE COMPLET — Calcul de Valeur Nette Comptable (VNC) :
+  Demande utilisateur : "Calcule la VNC pour différents actifs après amortissement linéaire"
+  Schéma attendu (chaque ligne a ses propres inputs, pas de variable globale) :
+  <!-- TABLE_SCHEMA: {
+    "type": "complex_table",
+    "title": "Calcul VNC après amortissement linéaire",
+    "parameters": [
+      { "name": "Taux d'amortissement linéaire appliqué", "ref": "C5", "value": "Linéaire", "type": "text" }
+    ],
+    "columns": [
+      { "header": "Coût d'acquisition", "type": "currency", "formula": null, "formula_en": null, "description": "Coût initial de l'actif" },
+      { "header": "Durée d'utilisation (ans)", "type": "integer", "formula": null, "formula_en": null, "description": "Durée de vie utile en années" },
+      { "header": "Années écoulées", "type": "integer", "formula": null, "formula_en": null, "description": "Années d'amortissement déjà passées" },
+      { "header": "Annuité d'amortissement", "type": "currency", "formula": "=C{row}/D{row}", "formula_en": "=C{row}/D{row}", "description": "Amortissement annuel" },
+      { "header": "Amortissements cumulés", "type": "currency", "formula": "=F{row}*E{row}", "formula_en": "=F{row}*E{row}", "description": "Cumul des amortissements" },
+      { "header": "Valeur Nette Comptable (VNC)", "type": "currency", "formula": "=C{row}-G{row}", "formula_en": "=C{row}-G{row}", "description": "Valeur résiduelle après amortissement" }
+    ],
+    "data_start_row": 10,
+    "sample_rows": 3
+  } -->
+  Note : ici on a 3 colonnes INPUT (formula: null), donc on DOIT exposer au moins 1 paramètre global 
+  dans "parameters" (ici un simple libellé informatif sur la méthode). Si on ne le fait pas, 
+  le schéma est REJETÉ et l'Excel interactif n'est PAS généré.
+
+DÉTAILS DU SCHÉMA :
+  - "type": toujours "complex_table"
+  - "title": court, <= 80 caractères
+  - "parameters": voir ALGORITHME ci-dessus. Jamais [] si colonnes input existent.
+    * "ref" = cellule d'input (C5, C6, etc. Laisse les lignes 1 à 4 pour le titre/description, commence à C5)
+    * "type" = "currency" | "percentage" | "integer" | "number" | "date" | "text"
+    * "value" = VALEUR CONSTANTE pour les inputs saisissables par l'utilisateur. Optionnel si formula est fourni.
+    * "formula" = FORMULE EN ANGLAIS INVARIANT pour les PARAMÈTRES CALCULÉS (cellule de référence calculée
+      automatiquement, pas modifiable par l'utilisateur). Exemple : "Total jours dans l'année" calculé à
+      partir d'une date du tableau = "formula": "=DATE(YEAR(C10),12,31)-DATE(YEAR(C10),1,1)+1".
+      La formule peut référencer des cellules du tableau (ex: C10). Elle sera injectée dans ExcelJS.
+    * "formula_label" = (optionnel) formule adaptée au format utilisateur, pour affichage dans le guide.
+    * IMPORTANT : tous les paramètres calculés référencés par les colonnes (ex: "$C$6") DOIVENT être déclarés
+      dans "parameters" avec leur "formula". Sinon la cellule sera vide dans l'Excel et toutes les colonnes
+      qui la référencent afficheront #DIV/0! ou #VALEUR!.
+    * EXEMPLE — Budget annuel par prorata de jours :
+      "parameters": [
+        { "name": "Budget Annuel Total", "ref": "C5", "value": 120000, "type": "currency", "unit": "€" },
+        { "name": "Total jours dans l'année", "ref": "C6", "type": "integer",
+          "formula": "=DATE(YEAR(C10),12,31)-DATE(YEAR(C10),1,1)+1" }
+      ]
+      Les colonnes : C (Date du mois), D (Mois libellé), E (Jours du mois), F (Prorata =E{row}/$C$6), 
+      G (Budget mensuel =$C$5*F{row}). C6 est calculée automatiquement — l'utilisateur n'a qu'à saisir C5 et C10.
+  - "columns": >= 2 colonnes. Pour chaque colonne :
+    * "formula" et "formula_en" DOIVENT être null ensemble OU non-null ensemble
+    * "formula" = formule adaptée au format choisi par l'utilisateur (ex: avec noms en français et point-virgule si excel-fr)
+    * "formula_en" = formule INVARIANTE en anglais (IF, VLOOKUP, PMT…), virgule comme séparateur, 
+      point comme séparateur décimal. C'est cette version qui sera injectée dans ExcelJS.
+    * Si la colonne est une colonne INPUT (saisie utilisateur), "formula" et "formula_en" sont null
+  - "data_start_row": ligne de départ des données (10 par défaut, >= 2)
+  - "sample_rows": nombre de lignes d'exemple à générer dans l'Excel (1 à 100, défaut 3).
+    Pour un calcul d'amortissement sur 12 ans, tu peux mettre 12 lignes, ou 24, etc.
+
+RÈGLES CRITIQUES pour les formules du schéma :
+  - UTILISE EXCLUSIVEMENT le placeholder {row} (PAS de {row-1}, PAS de {row+1}).
+  - Le placeholder {row} sera remplacé par le numéro de ligne réel de chaque ligne de données.
+  - ⚠️ CONVENTION DE LETTRES DE COLONNES — TRÈS IMPORTANT :
+    Dans le fichier Excel généré, la colonne B est réservée au libellé "Ligne 1", "Ligne 2", etc.
+    Les colonnes de DONNÉES commencent à la lettre C, puis D, E, F, G, H, I, J, K, L...
+    Ta 1ère colonne dans "columns" correspond à la lettre C (les refs dans tes formules doivent utilisé C{row}).
+    Ta 2ème colonne correspond à la lettre D.
+    Ta 3ème colonne correspond à la lettre E. Etc.
+    Exemple pour 10 colonnes : columns[0]=C, columns[1]=D, columns[2]=E, columns[3]=F, 
+    columns[4]=G, columns[5]=H, columns[6]=I, columns[7]=J, columns[8]=K, columns[9]=L.
+  - Pour référencer une colonne SUR LA MÊME LIGNE (calculs intermédiaires), écris simplement G{row} (où G est la lettre de la colonne calculée).
+  - Pour le PREMIER cas sur une ligne (ex: solde initial), écris par exemple :
+        =IF(A{row}=1, $C$5, G{row})
+    N'écris JAMAIS G{row-1} -> cela provoque un #REF! sur la ligne 10.
+  - Les cellules d'input (parameters globaux) utilisent des réfs absolues ($C$5, $C$6).
+  - Les colonnes input (formula: null) sont référencées par leur lettre + {row} (ex: C{row}, D{row}).
+  - "formula" et "formula_en" doivent être LOGIQUEMENT ÉQUIVALENTES mais syntaxiquement adaptées :
+    * "formula" pour le format demandé
+    * "formula_en" toujours en anglais invariant
+
+QUAND UTILISER le mode complexe (général, n'importe quel domaine) :
+  - Demandes nécessitant PLUS D'1 colonne calculée (formules distinctes par colonne)
+  - Tableaux d'amortissement, plan de remboursement, échéancier
+  - Budget prévisionnel, suivi de trésorerie, compte de résultat prévisionnel
+  - Planning de projet avec calculs de durée/charge
+  - Suivi de stock avec valorisation
+  - Facturation multi-lignes, devis avec remises cumulées
+  - Tableau de bord KPI avec plusieurs indicateurs calculés
+  - Comptabilité analytique, répartition de coûts
+  - Calculs scientifiques avec chaînes de dépendances
+  - Quand l'utilisateur importe un fichier avec un tableau existant multi-colonnes à compléter
+
+QUAND RESTER en mode simple (comportement actuel) :
+  - Une seule formule à produire (TVA, pourcentage, RECHERCHEV, SI simple…)
+  - Le résultat se résume à une seule colonne calculée
+  - Demande ponctuelle sans tableau complet
+
 RÈGLES ABSOLUES à suivre sans exception :
 1. N'invente JAMAIS une fonction Excel/Sheets qui n'existe pas. Si tu as un doute, dis-le explicitement.
 2. Vérifie mentalement la syntaxe et l'ordre exact des arguments avant de répondre.
@@ -106,7 +247,7 @@ Si l'utilisateur fournit des données de fichier (tableau markdown avec en-tête
 2. Utilise ces données pour formuler des formules pertinentes
 3. Les colonnes commencent à la colonne A pour les données fournies
 4. Si une simulation est demandée sur les données du fichier, utilise les valeurs fournies comme données d'entrée
-5. La simulation table doit refléter la structure du fichier importé
+5. Pour les fichiers importés à modifier, utilise le MODE COMPLEXE si le tableau contient plusieurs colonnes calculées, afin de préserver la structure originale et d'ajouter de nouvelles formules.
 
 - Termine TOUJOURS ta réponse par une ligne : ✅ Vérification : [confirme la validité syntaxique ou signale un point à adapter].
 

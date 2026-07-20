@@ -27,10 +27,8 @@ const FRENCH_TO_ENGLISH: Record<string, string> = {
 
 export function postProcessFormula(formula: string, format: ExportFormat): string {
   let result = formula;
-  if (format === "libreoffice-en") {
+  if (format === "libreoffice-en" || format === "libreoffice-fr") {
     result = convertXlookupToIndexMatch(result, "en");
-  }
-  if (format === "libreoffice-fr") {
     result = convertXlookupToIndexMatch(result, "fr");
   }
 
@@ -45,6 +43,26 @@ export function postProcessFormula(formula: string, format: ExportFormat): strin
   }
 
   return result;
+}
+
+const ROW_PLACEHOLDER_REGEX = /\{row\}/g;
+
+export function resolveFormulaTemplate(
+  formulaTemplate: string,
+  row: number,
+  format: ExportFormat,
+  isAlreadyEnglish: boolean = false
+): string {
+  // 1. Substituer {row} par le numéro de ligne réel
+  const substituted = formulaTemplate.replace(ROW_PLACEHOLDER_REGEX, String(row));
+
+  // 2. Convertir en US invariant (anglais) si nécessaire
+  const usInvariant = isAlreadyEnglish
+    ? substituted
+    : convertToUsInvariant(substituted, format);
+
+  // 3. Post-traitement (LibreOffice conversion + prefixes _xlfn)
+  return postProcessFormula(usInvariant, format);
 }
 
 export function convertToUsInvariant(formula: string, format: ExportFormat): string {

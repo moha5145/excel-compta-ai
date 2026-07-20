@@ -59,22 +59,46 @@ function sheetToParsedSheet(
   }
 }
 
-function buildTextRepresentation(sheet: ParsedSheet): string {
-  const lines: string[] = []
-  lines.push(`[Feuille : ${sheet.name}]`)
-  lines.push('| ' + sheet.headers.join(' | ') + ' |')
-  lines.push('|' + sheet.headers.map(() => '---|').join(''))
+function detectFormulas(sheet: XLSX.WorkSheet): Record<string, string> {
+  const formulas: Record<string, string> = {};
+  for (const cellAddr of Object.keys(sheet)) {
+    if (cellAddr.startsWith("!")) continue;
+    const cell = sheet[cellAddr];
+    if (cell?.f) {
+      formulas[cellAddr] = cell.f.startsWith("=") ? cell.f : `=${cell.f}`;
+    }
+  }
+  return formulas;
+}
+
+function buildTextRepresentation(sheet: ParsedSheet, formulas: Record<string, string>): string {
+  const lines: string[] = [];
+  lines.push(`[Feuille : ${sheet.name}]`);
+  lines.push(`Colonnes : ${sheet.totalCols} · Lignes : ${sheet.totalRows}`);
   
+  if (sheet.totalCols > 0) {
+    lines.push(`En-têtes : ${sheet.headers.join(", ")}`);
+  }
+  
+  const formulaEntries = Object.entries(formulas);
+  if (formulaEntries.length > 0) {
+    lines.push(`⚠️ Formules détectées dans le fichier d'origine (${formulaEntries.length}) :`);
+    for (const [addr, f] of formulaEntries.slice(0, 10)) {
+      lines.push(`  ${addr} : ${f}`);
+    }
+  }
+  
+  lines.push("");
+  lines.push("| " + sheet.headers.join(" | ") + " |");
+  lines.push("|" + sheet.headers.map(() => "---|").join(""));
   for (const row of sheet.rows.slice(0, 20)) {
-    const vals = row.map((c) => (c === null ? '' : String(c))).join(' | ')
-    lines.push('| ' + vals + ' |')
+    const vals = row.map((c) => (c === null ? "" : String(c))).join(" | ");
+    lines.push("| " + vals + " |");
   }
-  
   if (sheet.totalRows > 20) {
-    lines.push(`*... ${sheet.totalRows - 20} lignes supplémentaires masquées pour économiser du contexte*`)
+    lines.push(`*... ${sheet.totalRows - 20} lignes supplémentaires masquées*`);
   }
-  
-  return lines.join('\n')
+  return lines.join("\n");
 }
 
 export async function parseFile(file: File): Promise<FileParseResult> {
@@ -85,24 +109,31 @@ export async function parseFile(file: File): Promise<FileParseResult> {
     const workbook = XLSX.read(text, { type: 'string', raw: true })
     const sheet = workbook.Sheets[workbook.SheetNames[0]]
     const parsed = sheetToParsedSheet(sheet, 'CSV')
+    const formulas = detectFormulas(sheet);
     return {
       fileName: file.name,
       fileSize: file.size,
       sheets: [parsed],
-      textRepresentation: buildTextRepresentation(parsed),
+      textRepresentation: buildTextRepresentation(parsed, formulas),
     }
   }
 
   const workbook = XLSX.read(buffer, { type: 'array', raw: true })
-  const sheets: ParsedSheet[] = workbook.SheetNames.slice(0, 1).map((name) => {
+  const sheets: ParsedSheet[] = workbook.SheetNames.slice(0, 3).map((name) => {
     const sheet = workbook.Sheets[name]
     return sheetToParsedSheet(sheet, name)
   })
+
+  const textRepresentations = sheets.map(s => {
+    const sheet = workbook.Sheets[s.name];
+    const formulas = detectFormulas(sheet);
+    return buildTextRepresentation(s, formulas);
+  });
 
   return {
     fileName: file.name,
     fileSize: file.size,
     sheets,
-    textRepresentation: sheets.map(buildTextRepresentation).join('\n\n'),
+    textRepresentation: textRepresentations.join('\n\n'),
   }
 }
