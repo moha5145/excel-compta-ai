@@ -14,6 +14,7 @@ const GeminiRequestSchema = z.object({
   apiKey: z.string().nullable().optional(),
   modelChoice: z.enum(["flash", "pro"]).optional(),
   format: z.enum(["excel-en", "excel-fr", "libreoffice-en", "libreoffice-fr", "sheets-en", "sheets-fr"]).optional(),
+  generationMode: z.enum(["formula_only", "simple_table", "complex_table"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -26,7 +27,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
     
-    const { prompt, messages, apiKey, modelChoice, format: reqFormat } = parsed.data;
+    const { prompt, messages, apiKey, format: reqFormat, generationMode: reqGenerationMode } = parsed.data;
+    const generationMode = reqGenerationMode || "formula_only";
 
     let finalMessages: { role: "user" | "model"; content: string }[] = [];
     if (messages && messages.length > 0) {
@@ -90,10 +92,28 @@ export async function POST(req: NextRequest) {
     const formatKey = reqFormat || "libreoffice-fr";
     const formatInstruction = FORMAT_INSTRUCTIONS[formatKey] || FORMAT_INSTRUCTIONS["libreoffice-fr"];
 
-    const systemInstruction = `Tu es un expert certifié en tableurs (Microsoft Excel et Google Sheets) ainsi qu'en logique de calcul, formules et modélisation de données.
-
-${formatInstruction}
-
+    let modeInstruction = "";
+    if (generationMode === "formula_only") {
+      modeInstruction = `MODE DEMANDÉ : FORMULE SEULE (RAPIDE)
+GÉNÉRAL : L'utilisateur souhaite uniquement obtenir la formule et son explication textuelle.
+  1. Fournis le bloc de code avec la formule exacte adaptée au format choisi.
+  2. Fournis une explication synthétique sous forme de puces.
+  3. Ne génère AUCUN tableau Markdown de données.
+  4. IL EST STRICTEMENT INTERDIT d'ajouter un schéma JSON (<!-- TABLE_SCHEMA --> est STRICTEMENT INTERDIT dans ce mode).
+MODE OVERRIDE : INTERDIT. Ce mode est verrouillé par l'utilisateur. Ne change RIEN même si la demande semble demander un tableau. Réponds en mode formule seule.`;
+    } else if (generationMode === "simple_table") {
+      modeInstruction = `MODE DEMANDÉ : TABLEAU SIMPLE
+GÉNÉRAL : L'utilisateur souhaite une formule accompagnée d'un petit tableau d'exemple.
+  1. Fournis le bloc de code avec la formule exacte.
+  2. Fournis une explication claire.
+  3. Inclus un tableau Markdown simple de démonstration (3 à 5 lignes d'exemple avec des valeurs réalistes).
+  4. IL EST STRICTEMENT INTERDIT d'ajouter un schéma JSON (<!-- TABLE_SCHEMA --> est STRICTEMENT INTERDIT dans ce mode).
+MODE OVERRIDE : AUTORISÉ. Si tu juges que la demande nécessite IMPÉRATIVEMENT un tableau complexe (voir CHECKLIST : ≥2 colonnes calculées distinctes, OU agrégation conditionnelle type SOMME.SI.ENS/MAX.SI.ENS, OU table de référence pour INDEX/MATCH), ALORS :
+  - Bascule en mode tableau complexe : génère le tableau Markdown, le schéma <!-- TABLE_SCHEMA: { ... } -->, et la formule EN.
+  - En TOUT DÉBUT de ta réponse, écris EXACTEMENT la ligne : <!-- MODE_OVERRIDE: complex_table -->
+  - Dans le cas contraire (mode simple suffit), n'écris AUCUNE ligne <!-- MODE_OVERRIDE: ... -->.`;
+    } else {
+      modeInstruction = `MODE DEMANDÉ : TABLEAU COMPLEXE (SIMULATION & INTERACTIVITÉ)
 MODE COMPLEXE — TABLEAUX MULTI-FORMULES (général, tout domaine) :
 GÉNÉRAL : Quand la demande de l'utilisateur nécessite un tableau avec >= 2 colonnes CALCULÉES 
 (chacune avec sa propre formule, potentiellement dépendantes entre elles), tu DOIS :
@@ -412,23 +432,38 @@ STRUCTURE DE RÉPONSE (respecter cet ordre) :
    - UTILISEZ TOUJOURS les références de cellules pour TOUS vos paramètres (texte, taux, dates, etc.) au lieu de coder des valeurs en dur. La formule doit être 100% interactive.
    - Nombres : valeur numérique pure (ex: 250000, 20). Pour les taux/pourcentages, incluez le signe % dans le tableau (ex: 3.5% ou 15%).
    - Dates : date au format JJ/MM/AAAA (ex: 01/01/2024)
-   Exemple avec 3 paramètres :
-   | Ligne   | Capital | Taux annuel | Durée (années) | Mensualité |
-   |---------|---------|-------------|----------------|------------|
-   | Ligne 1 | 250000  | 3.5%        | 20             | 1 449,90   |
-   | Ligne 2 | 150000  | 2.5%        | 15             | 1 001,25   |
+    Exemple avec 3 paramètres :
+    | Ligne   | Capital | Taux annuel | Durée (années) | Mensualité |
+    |---------|---------|-------------|----------------|------------|
+    | Ligne 1 | 250000  | 3.5%        | 20             | 1 449,90   |
+    | Ligne 2 | 150000  | 2.5%        | 15             | 1 001,25   |
 4. La ligne de vérification (✅).
 5. OBLIGATOIRE — À la toute fin de ta réponse, ajoute un commentaire HTML invisible contenant la formule traduite en anglais (noms de fonctions anglais, séparateur virgule, décimal point). Ce commentaire ne sera pas affiché à l'utilisateur. Format exact :
    <!-- FORMULA_EN: =ENGLISH_FORMULA_HERE -->
    Exemple : si la formule française est =SOMME.SI.ENS(E10:E12;C10:C12;"Nord";D10:D12;">="&DATE(2024;1;1)), écris :
-   <!-- FORMULA_EN: =SUMIFS(E10:E12,C10:C12,"Nord",D10:D12,">="&DATE(2024,1,1)) -->`;
+   <!-- FORMULA_EN: =SUMIFS(E10:E12,C10:C12,"Nord",D10:D12,">="&DATE(2024,1,1)) -->
+MODE OVERRIDE : AUTORISÉ. Si tu juges que la demande est en réalité simple (1 seule formule, pas d'agrégation conditionnelle, pas de table de référence, 1 colonne calculée), ALORS :
+  - Bascule en mode tableau simple : tableau Markdown 3-5 lignes, SANS schéma <!-- TABLE_SCHEMA -->.
+  - En TOUT DÉBUT de ta réponse, écris EXACTEMENT la ligne : <!-- MODE_OVERRIDE: simple_table -->
+  - Dans le cas contraire (le mode complexe est justifié), n'écris AUCUNE ligne <!-- MODE_OVERRIDE: ... -->.`;
+     }
+
+    const systemInstruction = `Tu es un expert certifié en tableurs (Microsoft Excel et Google Sheets) ainsi qu'en logique de calcul, formules et modélisation de données.
+
+${formatInstruction}
+
+${modeInstruction}`;
 
     const contents = finalMessages.map((msg) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
 
-    const selectedModel = modelChoice === "pro" ? "gemini-3.1-pro" : "gemini-3.5-flash";
+    // Modèle par défaut : gemini-3.6-flash (stable, le plus avancé en date).
+    // Le sélecteur "Pro" a été retiré de l'UI — 2.5 Pro n'est pas nécessairement
+    // supérieur à 3.6 Flash, et gemini-3.1-pro n'existe pas en v1beta (404 systématique).
+    // On garde modelChoice côté API pour rétro-compat mais on ignore sa valeur.
+    const selectedModel = "gemini-3.6-flash";
 
     async function generateStream(modelName: string) {
       const genAI = new GoogleGenerativeAI(apiKeyString);
@@ -443,10 +478,23 @@ STRUCTURE DE RÉPONSE (respecter cet ordre) :
     try {
       result = await generateStream(selectedModel);
     } catch (streamErr: unknown) {
-      if (streamErr instanceof Error && streamErr.message.includes("503")) {
-        const fallback = selectedModel === "gemini-3.1-pro" ? "gemini-2.5-pro" : "gemini-2.5-flash";
-        console.warn(`503 on ${selectedModel}, falling back to ${fallback}`);
-        result = await generateStream(fallback);
+      // Repli ordonné : 3.6-flash → 3.5-flash → 2.5-flash.
+      // On capture 503 (saturation), 404 (modèle retiré), et 400 (incompatible).
+      const isRecoverable = (e: unknown) =>
+        e instanceof Error && /503|404|400|not found/i.test(e.message);
+      if (isRecoverable(streamErr)) {
+        const fallback = selectedModel === "gemini-3.6-flash" ? "gemini-3.5-flash" : "gemini-2.5-flash";
+        console.warn(`${selectedModel} unavailable (${streamErr instanceof Error ? streamErr.message : "?"}), falling back to ${fallback}`);
+        try {
+          result = await generateStream(fallback);
+        } catch (fallbackErr: unknown) {
+          if (isRecoverable(fallbackErr) && fallback === "gemini-3.5-flash") {
+            console.warn(`3.5-flash unavailable, final fallback to gemini-2.5-flash`);
+            result = await generateStream("gemini-2.5-flash");
+          } else {
+            throw fallbackErr;
+          }
+        }
       } else {
         throw streamErr;
       }

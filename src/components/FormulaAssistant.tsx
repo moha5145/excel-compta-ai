@@ -1,10 +1,12 @@
 "use client";
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Copy, Check, Wand2, Undo2, Zap, Brain, Key, Download, FileSpreadsheet, FileType, RefreshCw } from "lucide-react";
+import { Loader2, Copy, Check, Wand2, Undo2, Zap, Brain, Key, Download, FileSpreadsheet, FileType, RefreshCw, Code2, Table, Calculator } from "lucide-react";
 import type { ExportFormat } from "@/lib/excelExport";
 
-export const FORMULA_EXAMPLES = [
+export type GenerationMode = "formula_only" | "simple_table" | "complex_table";
+
+export const FORMULA_EXAMPLES: { label: string; keywords: string }[] = [
   { label: "Sélectionnez un exemple rapide...", keywords: "" },
   { label: "Mensualité d'un prêt de 250 000€ sur 20 ans à 3.5%", keywords: "mensualité" },
   { label: "Retrouver un prix depuis une liste produit", keywords: "prix" },
@@ -35,7 +37,7 @@ interface FormulaInputBarProps {
   enhancing: boolean;
   onGenerate: () => void;
   onEnhance: () => void;
-  modelChoice: "flash" | "pro";
+  modelChoice?: "flash" | "pro";
   onModelChange?: (model: "flash" | "pro") => void;
   dailyFreeRemaining?: number | null;
   onRequestKeyModal?: () => void;
@@ -45,6 +47,8 @@ interface FormulaInputBarProps {
   onSelectExample?: (example: { label: string; keywords: string }) => void;
   format: ExportFormat;
   onFormatChange: (format: ExportFormat) => void;
+  generationMode: GenerationMode;
+  onGenerationModeChange: (mode: GenerationMode) => void;
 }
 
 export function FormulaInputBar({
@@ -64,6 +68,8 @@ export function FormulaInputBar({
   onSelectExample,
   format,
   onFormatChange,
+  generationMode,
+  onGenerationModeChange,
 }: FormulaInputBarProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [selectedExampleIndex, setSelectedExampleIndex] = useState(0);
@@ -81,7 +87,50 @@ export function FormulaInputBar({
   return (
     <div className="w-full bg-background/90 backdrop-blur-2xl border-t border-border/80 py-3 px-3 sm:py-4 sm:px-6 flex-shrink-0 z-30">
       <div className="max-w-4xl mx-auto flex flex-col gap-2">
-        {/* Banner removed: modal will handle it instead */}
+        {/* Mode Selector */}
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border/40 text-xs self-start mb-0.5 max-w-full overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => onGenerationModeChange("formula_only")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all text-xs font-medium cursor-pointer whitespace-nowrap ${
+              generationMode === "formula_only"
+                ? "bg-background text-foreground shadow-xs border border-border/60"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            title="Générer uniquement la formule avec explication (rapide)"
+          >
+            <Code2 size={13} className={generationMode === "formula_only" ? "text-primary" : ""} />
+            <span>Formule seule</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerationModeChange("simple_table")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all text-xs font-medium cursor-pointer whitespace-nowrap ${
+              generationMode === "simple_table"
+                ? "bg-background text-foreground shadow-xs border border-border/60"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            title="Formule + Tableau d'exemples simple"
+          >
+            <Table size={13} className={generationMode === "simple_table" ? "text-primary" : ""} />
+            <span>Tableau simple</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerationModeChange("complex_table")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all text-xs font-medium cursor-pointer whitespace-nowrap ${
+              generationMode === "complex_table"
+                ? "bg-background text-foreground shadow-xs border border-border/60"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            title="Formule + Tableau de simulation interactif complet"
+          >
+            <Calculator size={13} className={generationMode === "complex_table" ? "text-primary" : ""} />
+            <span>Tableau complexe</span>
+          </button>
+        </div>
 
         {/* Input area bubble */}
         <div className="relative flex flex-col bg-card border border-border/40 rounded-2xl p-2 sm:p-2.5 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
@@ -99,33 +148,12 @@ export function FormulaInputBar({
           <div className="flex flex-wrap items-center justify-between mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-border/60 px-0.5 sm:px-1 gap-1.5 sm:gap-2">
             {/* Left actions: Model choice, Format, Enhance */}
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {apiKey && onModelChange && (
-                <div className="flex items-center gap-1 bg-muted/80 border border-border p-0.5 rounded-lg text-xs">
-                  <button
-                    type="button"
-                    onClick={() => onModelChange("flash")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${modelChoice === "flash" ? "bg-primary text-white font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    title="Modèle rapide (Gemini 3.5 Flash)"
-                  >
-                    <Zap size={11} /> Flash
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onModelChange("pro")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${modelChoice === "pro" ? "bg-gradient-to-r from-yellow-600 to-yellow-500 text-white font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    title="Modèle expert pour requêtes complexes (Gemini 3.1 Pro)"
-                  >
-                    <Brain size={11} /> Pro
-                  </button>
-                </div>
-              )}
-              <div className="flex items-center gap-0.5 sm:gap-1 bg-muted/80 border border-border p-0.5 rounded-lg text-xs">
-                <FileType size={11} className="text-muted-foreground ml-1 sm:ml-1.5 flex-shrink-0 hidden sm:block" />
+              <div className="flex items-center gap-1 bg-muted/80 border border-border p-0.5 rounded-lg text-xs">
                 <select
                   value={format}
                   onChange={(e) => onFormatChange(e.target.value as ExportFormat)}
-                  className="bg-transparent text-muted-foreground hover:text-foreground text-[10px] sm:text-[11px] py-1 px-1 sm:px-1.5 rounded-md border-0 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer appearance-none max-w-[55px] sm:max-w-none text-ellipsis overflow-hidden"
-                  aria-label="Format de sortie"
+                  className="bg-transparent text-foreground text-xs py-1 px-1.5 focus:outline-none cursor-pointer rounded"
+                  title="Format de formule et séparateurs"
                 >
                   <option value="excel-en" className="bg-background">Excel EN</option>
                   <option value="excel-fr" className="bg-background">Excel FR</option>
@@ -171,8 +199,9 @@ export function FormulaInputBar({
                     onChange={(e) => {
                       const idx = Number(e.target.value);
                       if (idx > 0) {
-                        onSelectExample(FORMULA_EXAMPLES[idx]);
-                        setSelectedExampleLabel(FORMULA_EXAMPLES[idx].label);
+                        const example = FORMULA_EXAMPLES[idx];
+                        onSelectExample(example);
+                        setSelectedExampleLabel(example.label);
                         setSelectedExampleIndex(0);
                       }
                     }}
@@ -229,11 +258,11 @@ export function FormulaInputBar({
                 {prompt.length}/3000
               </span>
 
+              {/* Submit button */}
               <Button
                 onClick={onGenerate}
                 disabled={loading || !prompt.trim()}
-                size="icon"
-                className="h-8 w-8 bg-primary hover:bg-yellow-600 text-white rounded-lg shadow-md cursor-pointer transition-all disabled:opacity-50 shrink-0"
+                className="bg-primary hover:bg-primary/90 text-white rounded-xl h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm font-medium shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer focus-visible:outline-none flex items-center justify-center gap-1.5"
                 aria-label="Générer la formule Excel"
               >
                 {loading ? (
@@ -262,7 +291,8 @@ interface FormulaResultAreaProps {
   onCopy: () => void;
   onDownload: () => void;
   onDownloadExcel: () => void;
-  onRegenerate: () => void;
+  onRegenerate: (promptOverride?: string) => void;
+  generationMode?: GenerationMode;
 }
 
 export function FormulaResultArea({
@@ -273,6 +303,7 @@ export function FormulaResultArea({
   onDownload,
   onDownloadExcel,
   onRegenerate,
+  generationMode = "formula_only",
 }: FormulaResultAreaProps) {
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -296,7 +327,7 @@ export function FormulaResultArea({
       <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-2 w-full">
         <Button
           variant="outline"
-          onClick={onRegenerate}
+          onClick={() => onRegenerate()}
           disabled={loading}
           className="min-w-0 border-primary/30 bg-primary/5 hover:bg-primary/15 hover:border-primary/50 active:scale-95 text-primary rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
           title="Régénérer avec le même prompt"
@@ -306,12 +337,16 @@ export function FormulaResultArea({
         <Button
           variant="outline"
           onClick={onCopy}
-          className="min-w-0 border-border bg-btn-outline-bg hover:bg-btn-outline-hover active:scale-95 text-foreground rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
+          className={`min-w-0 border-border rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1 ${
+            generationMode === "formula_only"
+              ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary font-medium"
+              : "bg-btn-outline-bg hover:bg-btn-outline-hover text-foreground"
+          }`}
         >
           {copied ? (
-            <><Check size={14} className="text-green-500 mr-1 sm:mr-1.5 flex-shrink-0" /> Copié</>
+            <><Check size={14} className={generationMode === "formula_only" ? "text-white mr-1 sm:mr-1.5 flex-shrink-0" : "text-green-500 mr-1 sm:mr-1.5 flex-shrink-0"} /> Copié</>
           ) : (
-            <><Copy size={14} className="mr-1 sm:mr-1.5 flex-shrink-0" /> Copier</>
+            <><Copy size={14} className="mr-1 sm:mr-1.5 flex-shrink-0" /> Copier la formule</>
           )}
         </Button>
         <Button
@@ -322,14 +357,16 @@ export function FormulaResultArea({
         >
           <Download size={14} className="mr-1 sm:mr-1.5 flex-shrink-0" /> Explication
         </Button>
-        <Button
-          variant="outline"
-          onClick={onDownloadExcel}
-          className="min-w-0 border-green-300 dark:border-green-900/50 bg-green-50 dark:bg-emerald-950/20 hover:bg-green-100 dark:hover:bg-emerald-900/30 hover:border-green-400 dark:hover:border-emerald-700 active:scale-95 text-green-700 dark:text-emerald-400 rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
-          title="Télécharger l'exemple Excel (.xlsx)"
-        >
-          <FileSpreadsheet size={14} className="mr-1 sm:mr-1.5 text-green-600 dark:text-emerald-500 flex-shrink-0" /> Excel
-        </Button>
+        {generationMode !== "formula_only" && (
+          <Button
+            variant="outline"
+            onClick={onDownloadExcel}
+            className="min-w-0 border-green-300 dark:border-green-900/50 bg-green-50 dark:bg-emerald-950/20 hover:bg-green-100 dark:hover:bg-emerald-900/30 hover:border-green-400 dark:hover:border-emerald-700 active:scale-95 text-green-700 dark:text-emerald-400 rounded-xl transition-all h-9 px-2 sm:px-3 text-[11px] sm:text-xs cursor-pointer focus-visible:outline-none sm:flex-1"
+            title="Télécharger l'exemple Excel (.xlsx)"
+          >
+            <FileSpreadsheet size={14} className="mr-1 sm:mr-1.5 text-green-600 dark:text-emerald-500 flex-shrink-0" /> Excel
+          </Button>
+        )}
       </div>
     </div>
   );

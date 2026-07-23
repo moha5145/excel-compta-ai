@@ -272,9 +272,13 @@ function parseExplanationLines(markdown: string): LineType[] {
 export async function downloadFormulaAsExcel(
   response: string,
   prompt: string,
-  format: ExportFormat = "libreoffice-fr"
+  format: ExportFormat = "libreoffice-fr",
+  mode?: "formula_only" | "simple_table" | "complex_table"
 ): Promise<void> {
-  if (isComplexResponse(response)) {
+  // Only explicit complex mode (or auto-overridden to complex) may use the TABLE_SCHEMA path.
+  // simple_table/formula_only skip it entirely — even if the LLM leaked a malformed schema comment,
+  // we fall back to the plain path so users never see "Schema de tableau complexe invalide".
+  if (mode === "complex_table" && isComplexResponse(response)) {
     const rawSchema = extractTableSchema(response);
     if (rawSchema === null) {
       console.warn("TABLE_SCHEMA détecté mais JSON illisible, fallback mode simple");
